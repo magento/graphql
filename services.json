@@ -1,5 +1,5 @@
 {
-    "products": {
+    "app": {
         "protos": [
             "/Users/andrewlevine/sites/grpc/app/code/Magento/CatalogProductApi/etc/product.proto",
             "/Users/andrewlevine/sites/grpc/app/code/Magento/Grpc/etc/generic.proto"

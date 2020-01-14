@@ -34,10 +34,7 @@ const invokeProtoc = (module.exports.invokeProtoc = async () => {
     const args = [
         `--plugin=protoc-gen-grpc=${jsPluginPath}`,
         `--plugin=protoc-gen-ts=${tsPluginPath}`,
-        // TODO: Remove this hack when namespaces in protobufs
-        // are fixed in m2 branch
-        '--proto_path=/Users/andrewlevine/sites/grpc',
-        ...includeDirs.map(d => `--proto_path=${d}`),
+        `--descriptor_set_in=build/fdsets/app.protoset`,
         // Note: The "namespace_prefix" option here is _super_ important,
         // or we'll end up with generated protobuf classes that don't
         // match the gRPC method signatures

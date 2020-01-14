@@ -2,48 +2,41 @@ import { assert } from './assert';
 import { ApolloServer, gql } from 'apollo-server';
 import { credentials } from 'grpc';
 import { promisify } from 'util';
-import { ProductListRequest } from '../generated/app/code/Magento/CatalogProductApi/etc/product_pb.js';
-import { CatalogClient } from '../generated/app/code/Magento/CatalogProductApi/etc/product_grpc_pb';
-import { FieldMask } from 'google-protobuf/google/protobuf/field_mask_pb';
+import {EchoRequest} from "../generated/echo_pb";
+import {EchoClient} from "../generated/echo_grpc_pb";
+
 
 const typeDefs = gql`
-    type Product {
-        id: String
+    input EchoRequest {
         name: String
-        description: String
+    }
+
+    type EchoReply {
+        greeting: String
     }
 
     type Query {
-        products: [Product]
+        echo(request: EchoRequest): EchoReply 
     }
 `;
-
 export async function main() {
-    const client = new CatalogClient(
+    const client = new EchoClient(
         '0.0.0.0:9001',
         credentials.createInsecure(),
     );
 
-    const getProductList = promisify(client.getProductList.bind(client));
+    const getGreeting = promisify(client.greet.bind(client));
 
     const resolvers = {
         Query: {
-            products: async (parent: any, args: any) => {
-                const message = new ProductListRequest();
-                message.setStore('1');
-                const attrMask = new FieldMask();
-                attrMask.setPathsList(['name', 'description']);
-                message.setAttributecodes(attrMask);
+            echo: async (parent: any, args: any) => {
+                const message = new EchoRequest();
+                message.setName(args.request.name);
 
-                const result = await getProductList(message);
-                assert(result, 'Unexpected response from Products API');
+                const result = await getGreeting(message);
+                assert(result, 'Unexpected response from Echo API');
 
-                const { dataList } = result.toObject();
-                return dataList.map(d => ({
-                    name: d.name && d.name.value,
-                    description: d.description && d.description.value,
-                    id: d.id,
-                }));
+                return {greeting: result.getGreeting()};
             },
         },
     };
