@@ -20,8 +20,11 @@ const typeDefs = gql`
     }
 `;
 export async function main() {
+    if (!process.env.APP_HOST) {
+        throw new Error('APP_HOST environment variable is not set.')
+    }
     const client = new EchoClient(
-        '0.0.0.0:9001',
+        process.env.APP_HOST,
         credentials.createInsecure(),
     );
 
