@@ -2,3 +2,5 @@ npm-debug.log
 node_modules
 generated
 dist
+magento-assets/fdsets
+.idea

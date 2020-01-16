@@ -15,3 +15,10 @@ Decoupled GraphQL Server for Magento 2 stores.
 3. Run `npm start`
 
 A URL should be flushed to stdout if the server has started successfully. Following this URL in a browser will load the GraphQL Playground.
+
+
+## Docker installation
+* Generate `magento.protoset` file in Magento using `./bin/magento proto:marshal` CLI command
+* Copy `magento.protoset` file to `magento_assets/fdsets/app.protoset`. Currently only app service is supported.
+* Launch `docker build -t graphql:latest .` in app root directory
+* Launch local application using `docker run -p 4000:4000 --rm -e APP_HOST=grpc_host:9001 graphql:latest`
