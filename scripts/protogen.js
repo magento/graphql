@@ -34,7 +34,7 @@ const invokeProtoc = (module.exports.invokeProtoc = async () => {
     const args = [
         `--plugin=protoc-gen-grpc=${jsPluginPath}`,
         `--plugin=protoc-gen-ts=${tsPluginPath}`,
-        `--descriptor_set_in=build/fdsets/app.protoset`,
+        `--descriptor_set_in=magento_assets/fdsets/app.protoset`,
         // Note: The "namespace_prefix" option here is _super_ important,
         // or we'll end up with generated protobuf classes that don't
         // match the gRPC method signatures
