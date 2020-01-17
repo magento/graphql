@@ -19,7 +19,7 @@ const debounce = require('debounce');
 const chokidar = require('chokidar');
 const stripAnsi = require('strip-ansi');
 const { spawn } = require('child_process');
-const { invokeProtoc, getProtoPaths } = require('./protogen');
+const { invokeProtoc } = require('./protogen');
 
 const ts = spawn(require.resolve('typescript/bin/tsc'), ['--watch']);
 
@@ -37,7 +37,7 @@ ts.on('close', code => {
     process.exit(1);
 });
 
-chokidar.watch([...getProtoPaths(), 'services.json']).on(
+chokidar.watch(['protosets/app.protoset']).on(
     'all',
     debounce(async () => {
         console.log(chalk`{green gRPC}: Running Code Generation`);

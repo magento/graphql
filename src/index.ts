@@ -2,9 +2,8 @@ import { assert } from './assert';
 import { ApolloServer, gql } from 'apollo-server';
 import { credentials } from 'grpc';
 import { promisify } from 'util';
-import {EchoRequest} from "../generated/echo_pb";
-import {EchoClient} from "../generated/echo_grpc_pb";
-
+import { EchoRequest } from '../generated/echo_pb';
+import { EchoClient } from '../generated/echo_grpc_pb';
 
 const typeDefs = gql`
     input EchoRequest {
@@ -16,15 +15,14 @@ const typeDefs = gql`
     }
 
     type Query {
-        echo(request: EchoRequest): EchoReply 
+        echo(request: EchoRequest): EchoReply
     }
 `;
 export async function main() {
-    if (!process.env.APP_HOST) {
-        throw new Error('APP_HOST environment variable is not set.')
-    }
+    const { ECHO_HOST = '0.0.0.0', ECHO_PORT = '9001' } = process.env;
+
     const client = new EchoClient(
-        process.env.APP_HOST,
+        `${ECHO_HOST}:${ECHO_PORT}`,
         credentials.createInsecure(),
     );
 
@@ -39,7 +37,7 @@ export async function main() {
                 const result = await getGreeting(message);
                 assert(result, 'Unexpected response from Echo API');
 
-                return {greeting: result.getGreeting()};
+                return { greeting: result.getGreeting() };
             },
         },
     };

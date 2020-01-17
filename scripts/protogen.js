@@ -1,11 +1,15 @@
-const { mkdir } = require('fs').promises;
-const { join, dirname } = require('path');
+const { mkdir, readFile } = require('fs').promises;
+const { join } = require('path');
 const execa = require('execa');
-const SVCS_PATH = require.resolve('../services.json');
+const protobuf = require('protobufjs');
 
 const EXE_EXT = process.platform === 'win32' ? '.exe' : '';
 const GEN_DIR = join(__dirname, '..', 'generated');
 
+const descriptorProtoPath = require.resolve(
+    'grpc-tools/bin/google/protobuf/descriptor.proto',
+);
+const protosetPath = require.resolve('../protosets/app.protoset');
 const protocPath = join(require.resolve('grpc-tools/bin/protoc', EXE_EXT));
 const jsPluginPath = join(
     require.resolve('grpc-tools/bin/grpc_node_plugin'),
@@ -16,38 +20,38 @@ const tsPluginPath = join(
     EXE_EXT,
 );
 
-const getProtoPaths = (module.exports.getProtoPaths = () => {
-    // Want uncached because this can be re-invoked
-    // multiple times in the same process via a watcher
-    delete require.cache[SVCS_PATH];
-    const svcs = require('../services.json');
-    return Object.values(svcs).reduce((coll, entry) => {
-        coll.push(...entry.protos);
-        return coll;
-    }, []);
-});
+const getProtoFilesFromProtoset = async () => {
+    const root = await protobuf.load(descriptorProtoPath);
+
+    const descriptorSet = root.lookup('google.protobuf.FileDescriptorSet');
+
+    const protoset = await readFile(protosetPath);
+    const message = descriptorSet.decode(protoset);
+
+    return message.file
+        .filter(f => f.package.startsWith('magento.') && f.service.length)
+        .map(f => f.name);
+};
 
 const invokeProtoc = (module.exports.invokeProtoc = async () => {
-    const protoPaths = getProtoPaths();
-    const includeDirs = protoPaths.map(p => dirname(p));
-
+    const protoFiles = await getProtoFilesFromProtoset();
     const args = [
         `--plugin=protoc-gen-grpc=${jsPluginPath}`,
         `--plugin=protoc-gen-ts=${tsPluginPath}`,
-        `--descriptor_set_in=magento_assets/fdsets/app.protoset`,
+        `--descriptor_set_in=protosets/app.protoset`,
         // Note: The "namespace_prefix" option here is _super_ important,
         // or we'll end up with generated protobuf classes that don't
         // match the gRPC method signatures
         `--js_out=namespace_prefix=proto,import_style=commonjs_strict,binary:${GEN_DIR}`,
         `--ts_out=service=grpc-node:${GEN_DIR}`,
         `--grpc_out=${GEN_DIR}`,
-        ...protoPaths,
+        protoFiles.join(' '),
     ];
 
     await mkdir(GEN_DIR, { recursive: true });
     const { stdout } = await execa(protocPath, args);
 
-    return { stdout, protoPaths };
+    return { stdout };
 });
 
 // If invoked directly from the CLI, do a single run
