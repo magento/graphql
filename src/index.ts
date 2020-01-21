@@ -1,9 +1,5 @@
-import { assert } from './assert';
 import { ApolloServer, gql } from 'apollo-server';
-import { credentials } from 'grpc';
-import { promisify } from 'util';
-import { EchoRequest } from '../generated/echo_pb';
-import { EchoClient } from '../generated/echo_grpc_pb';
+import { EchoDataSource } from './DataSources/EchoDataSource';
 
 const typeDefs = gql`
     input EchoRequest {
@@ -18,32 +14,32 @@ const typeDefs = gql`
         echo(request: EchoRequest): EchoReply
     }
 `;
+
 export async function main() {
     const { ECHO_HOST = '0.0.0.0', ECHO_PORT = '9001' } = process.env;
-
-    const client = new EchoClient(
-        `${ECHO_HOST}:${ECHO_PORT}`,
-        credentials.createInsecure(),
-    );
-
-    const getGreeting = promisify(client.greet.bind(client));
+    const echoClient = EchoDataSource.createClient({
+        host: ECHO_HOST,
+        port: Number(ECHO_PORT),
+    });
 
     const resolvers = {
         Query: {
-            echo: async (parent: any, args: any) => {
-                const message = new EchoRequest();
-                message.setName(args.request.name);
-
-                const result = await getGreeting(message);
-                assert(result, 'Unexpected response from Echo API');
-
-                return { greeting: result.getGreeting() };
+            echo: async (_parent: unknown, args: any, context: any) => {
+                const { echo } = context.dataSources;
+                return {
+                    greeting: await echo.greet(args.request.name),
+                };
             },
         },
     };
 
-    // @ts-ignore We don't really get type-safety here anyway
-    const server = new ApolloServer({ typeDefs, resolvers });
+    const server = new ApolloServer({
+        typeDefs,
+        resolvers,
+        dataSources: () => ({
+            echo: new EchoDataSource({ echoClient }),
+        }),
+    });
     const serverInfo = await server.listen();
     console.log(`GraphQL server is running at: ${serverInfo.url}`);
 }
