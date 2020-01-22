@@ -31,3 +31,7 @@ export function setup() {
     return { typeDefs, resolvers, dataSources };
 }
 ```
+
+## Working Example
+
+See [`src/packages/echo/`](/src/packages/echo/) for an example of a package that also includes a remote data source.
