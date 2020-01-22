@@ -1,8 +1,8 @@
-import { GRPCDataSource } from './GRPCDataSource';
-import { EchoClient } from '../../generated/echo_grpc_pb';
-import { EchoRequest } from '../../generated/echo_pb';
+import { GRPCDataSource } from '../../GRPCDataSource';
+import { EchoClient } from '../../../generated/echo_grpc_pb';
+import { EchoRequest } from '../../../generated/echo_pb';
 import { promisify } from 'util';
-import { assert } from '../assert';
+import { assert } from '../../assert';
 import { credentials } from 'grpc';
 
 type EchoDataSourceOpts = {
