@@ -2,29 +2,45 @@
 
 Decoupled GraphQL Server for Magento 2 stores.
 
-# Prerequisites
+## Prerequisites
 
--   Must have the ECP fork of Magento 2 running
--   Must have [`roadrunner`](https://github.com/spiral/roadrunner) running alongside the ECP m2 fork
+-   Must have a store based on the [ECP fork of Magento 2](https://github.com/magento-architects/magento2ce), with a branch that includes gRPC functionality (example: `grpc2`)
+-   Must have [`roadrunner`](https://github.com/spiral/roadrunner) running alongside the ECP m2 fork. A sample config will be in the root dir of the Magento store (`.rr.yaml`)
 
-## Getting Started
+## Running Locally
 
-1. Run `npm install` in the root of the project
-2. Run `npm run build`
-3. Run `npm start`
+### Get Protobufs from Magento
 
-A URL should be flushed to stdout if the server has started successfully. Following this URL in a browser will load the GraphQL Playground.
+1. Run `bin/magento proto:marshal` in the Magento store. This will generate `magento.protoset` in the root of the store
+2. Copy `magento.protoset` to `protosets/app.protoset` in this project
 
-## Configuring the Host/Port of the gRPC Echo Service
+### Docker Setup
 
-The following environment variables can be set
+1. Run `docker build -t graphql:latest .` to build + tag an up-to-date image for the project
+2. Start the server:
+    ```sh
+    docker run -p 4000:4000 --rm \
+        # see config options further below
+        -e ECHO_HOST=host.docker.internal \
+        graphql:latest
+    ```
 
--   `ECHO_HOST` (default `0.0.0.0`)
--   `ECHO_PORT` (default: `9001`)
+### Local Setup
 
-## Docker installation
+1. Install a version of `node.js` >= `12.0.0`
+2. Run `npm install` in the root of the project
+3. Run `npm run build` to generate types/fixtures and compile TypeScript sources
+4. Run `npm run start` to start the server
 
--   Generate `magento.protoset` file in Magento using `./bin/magento proto:marshal` CLI command
--   Copy `magento.protoset` file to `protosets/app.protoset`. Currently only the echo service is supported.
--   Launch `docker build -t graphql:latest .` in app root directory
--   Launch local application using `docker run -p 4000:4000 --rm -e ECHO_HOST=grpc_host -e ECHO_PORT=9001
+## Available Configuration Options
+
+All configuration options can be set via environment variables.
+
+| Variable    | Description                   | Default   |
+| ----------- | ----------------------------- | --------- |
+| `ECHO_HOST` | Hostname for gRPC echo server | `0.0.0.0` |
+| `ECHO_PORT` | Port for gRPC echo server     | `9001`    |
+
+## Extending the Graph
+
+See [`src/packages/README.md`](src/packages/README.md) for instructions to extend the graph.
