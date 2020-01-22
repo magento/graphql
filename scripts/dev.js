@@ -5,13 +5,13 @@
  * into it just makes things slower (TypeScript's own incremental builder is
  * significantly faster).
  *
- * This script really exists 2 get 2 parallel tasks running for you:
+ * This script really exists to get 3 parallel tasks running for you:
  *  1. TypeScript's incremental build server
  *  2. File watcher to rebuild proto/gRPC fixtures on change
+ *  3. File watcher to rebuild TS types for GraphQL schema changes
  *
  * If this script does not work for you, and you'd like to skip using it,
- * you can always start the TypeScript incremental compilation with
- * `npx tsc --watch`, and build fixtures with `node scripts/protogen.js`.
+ * you can always run the full build with "npm run build".
  */
 
 const chalk = require('chalk');
@@ -20,6 +20,8 @@ const chokidar = require('chokidar');
 const stripAnsi = require('strip-ansi');
 const { spawn } = require('child_process');
 const { invokeProtoc } = require('./protogen');
+const { extname } = require('path');
+const execa = require('execa');
 
 const ts = spawn(require.resolve('typescript/bin/tsc'), ['--watch']);
 
@@ -37,16 +39,39 @@ ts.on('close', code => {
     process.exit(1);
 });
 
-chokidar.watch(['protosets/app.protoset']).on(
-    'all',
-    debounce(async () => {
-        console.log(chalk`{green gRPC}: Running Code Generation`);
-        try {
-            await invokeProtoc();
-            console.log(chalk`{green gRPC}: Code Generation completed`);
-        } catch (err) {
-            console.error(chalk`{red gRPC}: Code Generation failed`);
-            console.error(err.stderr);
+chokidar
+    .watch([
+        'protosets/app.protoset', // for gRPC fixtues
+        'src/**/*.ts', // for codegen of schema >> TS types
+    ])
+    .on('all', (modificationType, filename) => {
+        const ext = extname(filename);
+        switch (true) {
+            case ext === '.protoset':
+                generateGRPCFixtures();
+            case ext === '.ts':
+                generateResolverTypes();
         }
-    }, 60),
-);
+    });
+
+const generateGRPCFixtures = debounce(async () => {
+    console.log(chalk`{green gRPC}: Running Code Generation`);
+    try {
+        await invokeProtoc();
+        console.log(chalk`{green gRPC}: Code Generation completed`);
+    } catch (err) {
+        console.error(chalk`{red gRPC}: Code Generation failed`);
+        console.error(err.stderr);
+    }
+}, 60);
+
+const generateResolverTypes = debounce(async () => {
+    console.log(chalk`{yellow gql-gen}: Running GraphQL Code Generation`);
+    try {
+        await execa('gql-gen');
+        console.log(chalk`{yellow gql-gen}: GraphQL Code Generation completed`);
+    } catch (err) {
+        console.error(chalk`{red gql-gen}: GraphQL Code Generation completed`);
+        console.error(err.stderr);
+    }
+}, 60);

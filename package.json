@@ -5,9 +5,9 @@
   "description": "Official Magento 2 GraphQL Server",
   "main": "dist/index.js",
   "scripts": {
-    "build": "node scripts/protogen.js && tsc",
+    "build": "npm run clean && node scripts/protogen.js && gql-gen && tsc",
     "start": "node dist/index.js",
-    "watch": "rm -rf dist generated && node scripts/dev.js",
+    "watch": "npm run build && echo -e '\\033c' && node scripts/dev.js",
     "clean": "rm -rf dist generated"
   },
   "author": "Adobe Inc.",
