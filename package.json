@@ -7,9 +7,9 @@
   "scripts": {
     "build": "npm run clean && node scripts/protogen.js && gql-gen && tsc",
     "start": "node dist/index.js",
-    "watch": "npm run build && echo -e '\\033c' && node scripts/dev.js",
-    "clean": "rm -rf dist generated",
-    "test": "jest"
+    "test": "jest",
+    "watch": "scripts/dev.js",
+    "clean": "rm -rf dist generated"
   },
   "author": "Adobe Inc.",
   "license": "UNLICENSED",
@@ -36,6 +36,7 @@
     "grpc-tools": "^1.8.0",
     "jest": "^25.1.0",
     "protobufjs": "^6.8.8",
+    "rimraf": "^3.0.1",
     "strip-ansi": "^6.0.0",
     "ts-jest": "^25.0.0",
     "ts-protoc-gen": "^0.12.0",

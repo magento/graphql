@@ -32,6 +32,17 @@ Decoupled GraphQL Server for Magento 2 stores.
 3. Run `npm run build` to generate types/fixtures and compile TypeScript sources
 4. Run `npm run start` to start the server
 
+### Incremental Builds
+
+If you're working locally, `npm run watch` will take care of the following tasks:
+
+-   Clean artifacts from previous local builds
+-   Watch TypeScript and run the TypeScript compiler on change
+-   Watch `typeDefs` in TypeScript files, and run code generation to generate corresponding TS types
+-   Watch `protosets/app.protoset`, and run gRPC fixture code generation on change
+
+It's recommended to use `npm run watch` in lieu of `npm run build` when making frequent changes locally.
+
 ## Available Configuration Options
 
 All configuration options can be set via environment variables.
