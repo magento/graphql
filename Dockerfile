@@ -1,7 +1,5 @@
 FROM node:12.14.1-buster-slim as builder
 
-RUN apt-get update && apt-get install -y cargo openssl pkg-config librust-cargo+openssl-dev
-
 WORKDIR /app
 
 RUN mkdir -p sites/grpc
