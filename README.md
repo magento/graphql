@@ -36,10 +36,11 @@ Decoupled GraphQL Server for Magento 2 stores.
 
 All configuration options can be set via environment variables.
 
-| Variable    | Description                   | Default   |
-| ----------- | ----------------------------- | --------- |
-| `ECHO_HOST` | Hostname for gRPC echo server | `0.0.0.0` |
-| `ECHO_PORT` | Port for gRPC echo server     | `9001`    |
+| Variable             | Description                                            | Default   |
+| -------------------- | ------------------------------------------------------ | --------- |
+| `ECHO_HOST`          | Hostname for gRPC echo server                          | `0.0.0.0` |
+| `ECHO_PORT`          | Port for gRPC echo server                              | `9001`    |
+| `LEGACY_GRAPHQL_URL` | URL to the monolithic GraphQL endpoint in Magento core |
 
 ## Extending the Graph
 
