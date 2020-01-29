@@ -35,3 +35,9 @@ export function setup() {
 ## Working Example
 
 See [`src/packages/echo/`](/src/packages/echo/) for an example of a package that also includes a remote data source.
+
+## Caveats
+
+GraphQL packages do not have any enforced ordering right now, meaning packages have to be written in a way where they don't assume what order they've been merged into the overall schema with.
+
+The ordering is dependent on the results of a readdir system call, which is platform-specific. In the future we can discuss introducing some form of dependency declaration/resolution so we have constraints to build an ordering from.
