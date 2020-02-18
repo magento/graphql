@@ -43,16 +43,8 @@ If you're working locally, `npm run watch` will take care of the following tasks
 
 It's recommended to use `npm run watch` in lieu of `npm run build` when making frequent changes locally.
 
-## Available Configuration Options
+## Documentation
 
-All configuration options can be set via environment variables.
-
-| Variable             | Description                                            | Default   |
-| -------------------- | ------------------------------------------------------ | --------- |
-| `ECHO_HOST`          | Hostname for gRPC echo server                          | `0.0.0.0` |
-| `ECHO_PORT`          | Port for gRPC echo server                              | `9001`    |
-| `LEGACY_GRAPHQL_URL` | URL to the monolithic GraphQL endpoint in Magento core |
-
-## Extending the Graph
-
-See [`src/packages/README.md`](src/packages/README.md) for instructions to extend the graph.
+-   [Configuration Options (set via ENV vars)](src/env/variables.json)
+-   [In-Process Extensions](src/packages/README.md)
+-   [Out-Of-Process Extensions](docs/OUT-OF-PROCESS-EXTENSIBILITY.md)

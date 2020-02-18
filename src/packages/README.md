@@ -20,9 +20,26 @@ import { IResolvers } from '../../../generated/graphql';
 import { gql } from 'apollo-server';
 
 export function setup() {
-    const typeDefs = gql`GraphQL schema definition language (SDL) here`;
+    const typeDefs = gql`
+        type MyNewInput = {
+            name: value
+        }
+
+        type NewQueryReply {
+            value: String
+        }
+
+        extend type Query {
+            newQuery(input: MyNewInput): NewQueryReply
+        }
+    `;
     const resolvers: IResolvers = {
-        // Resolvers for your typeDefs here
+        Query: {
+            newQuery(parent, args) {
+                const { name } = args.input;
+                return { value: name };
+            },
+        },
     };
     const dataSources = () => ({
         someAPI: new SomeAPIDataSource(),
