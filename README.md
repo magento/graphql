@@ -45,14 +45,14 @@ It's recommended to use `npm run watch` in lieu of `npm run build` when making f
 
 ## Available Configuration Options
 
-All configuration options can be set via environment variables.
+All configuration options are set via environment variables.
 
-| Variable             | Description                                            | Default   |
-| -------------------- | ------------------------------------------------------ | --------- |
-| `ECHO_HOST`          | Hostname for gRPC echo server                          | `0.0.0.0` |
-| `ECHO_PORT`          | Port for gRPC echo server                              | `9001`    |
-| `LEGACY_GRAPHQL_URL` | URL to the monolithic GraphQL endpoint in Magento core |
+See [`src/env/variables.json`](src/env/variables.json) for all configuration options.
 
-## Extending the Graph
+## Writing a Local/In-Process Extension
 
 See [`src/packages/README.md`](src/packages/README.md) for instructions to extend the graph.
+
+## Writing a Remote Adobe I/O Extension
+
+TODO: Document

@@ -12,8 +12,8 @@ export type GQLPackage = {
 };
 
 /**
- * @summary Find all Magento GraphQL packages, and get config
- *          from their respective setup functions
+ * @summary Find all local (in-process) Magento GraphQL packages,
+ *          and get config from their respective setup functions
  */
 export async function getAllPackages(
     packagesRoot: string,
@@ -80,21 +80,28 @@ const getPotentialPackage = (
     packagesRoot: string,
     dir: string,
 ): GQLPackage | undefined => {
-    const indexPath = join(packagesRoot, dir, 'index');
-    try {
-        const {
-            typeDefs,
-            resolvers,
-            dataSources,
-        } = require(indexPath).setup() as GQLPackage;
+    const indexPath = join(packagesRoot, dir);
+    let pkg;
 
-        return { name: dir, typeDefs, resolvers, dataSources };
+    try {
+        pkg = require(indexPath);
     } catch (err) {
         console.warn(
-            `Unexpected directory "${dir}" found in "${packagesRoot}". ` +
-                'Make sure your package has an index file that ' +
-                'exports the "setup" function',
+            `Found extension directory "${indexPath}", but did not find extension within it.`,
         );
+        return;
+    }
+
+    if (typeof pkg.setup !== 'function') {
+        console.warn(`Extension is missing setup() function: "${indexPath}"`);
+        return;
+    }
+
+    try {
+        const { typeDefs, resolvers, dataSources } = pkg.setup() as GQLPackage;
+        return { name: dir, typeDefs, resolvers, dataSources };
+    } catch (err) {
+        console.warn(`Failed running setup() function: ${indexPath}`);
     }
 };
 

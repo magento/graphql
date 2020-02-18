@@ -1,6 +1,6 @@
 const { join } = require('path');
 const { gql } = require('apollo-server');
-const { getAllPackages, mergePackageConfigs } = require('../packages');
+const { getAllPackages, mergePackageConfigs } = require('../localPackages');
 
 test('getAllPackages finds a single package', async () => {
     const packagesDir = join(__dirname, '__fixtures__', 'packages-case-1');
@@ -19,7 +19,7 @@ test('getAllPackages finds > 1 package', async () => {
     expect(packages.find(p => p.name === 'bar-package')).toBeTruthy();
 });
 
-test('getAllPackages warns but does not fail when pkg index is malformed', async () => {
+test('getAllPackages warns but does not fail when missing setup function', async () => {
     const warnStub = jest.fn();
     jest.spyOn(console, 'warn').mockImplementation(warnStub);
     const packagesDir = join(__dirname, '__fixtures__', 'packages-case-3');
@@ -27,7 +27,7 @@ test('getAllPackages warns but does not fail when pkg index is malformed', async
 
     expect(packages.length).toBe(0);
     expect(warnStub).toHaveBeenCalledWith(
-        expect.stringContaining('Unexpected directory '),
+        expect.stringContaining('Extension is missing setup()'),
     );
 });
 
