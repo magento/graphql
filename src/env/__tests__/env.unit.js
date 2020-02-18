@@ -1,3 +1,8 @@
+// the env module eagerly imports the variables file
+// as a side-effect on module initialization. Instead of
+// opting for DI in the module, we use a helper to get a
+// fresh copy of the module with a stubbed variables.json
+// for each test
 const getModuleUnderTestWithConf = conf => {
     jest.resetModules();
     jest.mock('../variables.json', () => conf);

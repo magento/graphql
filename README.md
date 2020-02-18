@@ -43,16 +43,8 @@ If you're working locally, `npm run watch` will take care of the following tasks
 
 It's recommended to use `npm run watch` in lieu of `npm run build` when making frequent changes locally.
 
-## Available Configuration Options
+## Documentation
 
-All configuration options are set via environment variables.
-
-See [`src/env/variables.json`](src/env/variables.json) for all configuration options.
-
-## Writing a Local/In-Process Extension
-
-See [`src/packages/README.md`](src/packages/README.md) for instructions to extend the graph.
-
-## Writing a Remote Adobe I/O Extension
-
-TODO: Document
+-   [Configuration Options (set via ENV vars)](src/env/variables.json)
+-   [In-Process Extensions](src/packages/README.md)
+-   [Out-Of-Process Extensions](docs/OUT-OF-PROCESS-EXTENSIBILITY.md)
