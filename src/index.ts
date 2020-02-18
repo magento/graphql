@@ -10,7 +10,7 @@ import { getAllPackages, mergePackageConfigs } from './localPackages';
 import { join } from 'path';
 import { HttpLink } from 'apollo-link-http';
 import fetch from 'isomorphic-fetch';
-import { readVar } from './env';
+import { readVar, isVarDefined } from './env';
 import {
     FunctionDirectiveVisitor,
     prependPkgNameToFunctionDirectives,
@@ -23,14 +23,14 @@ export async function main() {
         // schemas are last-in-wins
         localExtensions.executableSchema,
     ];
-    if (readVar('ENABLE_IO_FUNCTIONS')) {
+    if (isVarDefined('ENABLE_IO_FUNCTIONS')) {
         // remote extensions take precedence over local
         // extensions, to ensure remote extensions can
         // extend types when logic is moved from the monolith
         // to this server
         schemas.push(await collectRemoteExtensions());
     }
-    if (readVar('LEGACY_GRAPHQL_URL')) {
+    if (isVarDefined('LEGACY_GRAPHQL_URL')) {
         // Monolith schema gets highest precedence. It's
         // intentional that you cannot override the monolith
         // schema (if you need to extend the monolith schema, it
@@ -113,9 +113,19 @@ async function collectRemoteExtensions() {
  *          delegate queries back to the monolith
  */
 async function getExecutableFallbackSchema() {
-    const uri = readVar('LEGACY_GRAPHQL_URL');
-    const link = new HttpLink({ uri, fetch });
-    const rawMonolithSchema = await introspectSchema(link);
+    const url = readVar('LEGACY_GRAPHQL_URL');
+    const link = new HttpLink({ uri: url, fetch });
+    let rawMonolithSchema;
+
+    try {
+        rawMonolithSchema = await introspectSchema(link);
+    } catch (err) {
+        throw new Error(
+            `Failed introspecting remote Magento schema at "${url}". ` +
+                'Make sure that the LEGACY_GRAPHQL_URL variable ' +
+                'has the correct value for your Magento instance',
+        );
+    }
     return makeRemoteExecutableSchema({
         schema: rawMonolithSchema,
         link,
