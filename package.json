@@ -14,19 +14,17 @@
   "author": "Adobe Inc.",
   "license": "UNLICENSED",
   "dependencies": {
-    "apollo-link-http": "^1.5.16",
     "apollo-server": "^2.9.12",
     "google-protobuf": "^3.11.2",
     "graphql": "^14.5.8",
     "grpc": "^1.24.2",
-    "isomorphic-fetch": "^2.2.1"
+    "node-fetch": "^2.6.0"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^1.9.1",
     "@graphql-codegen/typescript": "1.0.0",
     "@graphql-codegen/typescript-resolvers": "1.0.0",
     "@types/google-protobuf": "^3.7.2",
-    "@types/isomorphic-fetch": "0.0.35",
     "@types/node": "^12.12.14",
     "@types/node-fetch": "^2.5.4",
     "chalk": "^3.0.0",
