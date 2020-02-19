@@ -28,9 +28,13 @@ const getProtoFilesFromProtoset = async () => {
     const protoset = await readFile(protosetPath);
     const message = descriptorSet.decode(protoset);
 
-    return message.file
-        .filter(f => f.package.startsWith('magento.') && f.service.length)
-        .map(f => f.name);
+    return (
+        message.file
+            // the "google-protobuf" package already ships with
+            // pre-compiled fixtures for well-known protos, so we can skip
+            .filter(f => !f.package.startsWith('google/protobuf'))
+            .map(f => f.name)
+    );
 };
 
 const invokeProtoc = (module.exports.invokeProtoc = async () => {
@@ -45,7 +49,7 @@ const invokeProtoc = (module.exports.invokeProtoc = async () => {
         `--js_out=namespace_prefix=proto,import_style=commonjs_strict,binary:${GEN_DIR}`,
         `--ts_out=service=grpc-node:${GEN_DIR}`,
         `--grpc_out=${GEN_DIR}`,
-        protoFiles.join(' '),
+        ...protoFiles,
     ];
 
     await mkdir(GEN_DIR, { recursive: true });
