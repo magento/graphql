@@ -8,7 +8,6 @@ import {
 } from 'apollo-server';
 import { getAllPackages, mergePackageConfigs } from './localPackages';
 import { join } from 'path';
-
 import { readVar, isVarDefined } from './env';
 import {
     FunctionDirectiveVisitor,

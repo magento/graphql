@@ -61,3 +61,26 @@ test('fetcher skips monolith-specific headers when context not provided', async 
     expect(headers).not.toContain('Content-Currency');
     expect(headers).not.toContain('Store');
 });
+
+test('fetcher excludes undefined and missing monolith-specific header values', async () => {
+    const fetchStub = fetchJSONStub('{}');
+    const fetcher = createMonolithFetcher(
+        'https://www.foo.test/graphql',
+        fetchStub,
+    );
+    await fetcher({
+        query: SAMPLE_QUERY,
+        context: {
+            graphqlContext: {
+                legacyToken: 'token123',
+                store: undefined,
+                // excluded currency field
+            },
+        },
+    });
+    const [, fetchOpts] = fetchStub.mock.calls[0];
+    const headers = Object.keys(fetchOpts.headers);
+    expect(headers).toContain('Authorization');
+    expect(headers).not.toContain('Content-Currency');
+    expect(headers).not.toContain('Store');
+});
