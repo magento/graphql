@@ -9,7 +9,7 @@ const getModuleUnderTestWithConf = conf => {
     return require('..');
 };
 
-test('returns default value when one is not specified', () => {
+test('readVar returns default value when one is not specified', () => {
     const { readVar } = getModuleUnderTestWithConf({
         FOO: {
             default: 'abc',
@@ -19,7 +19,7 @@ test('returns default value when one is not specified', () => {
     expect(readVar('FOO')).toBe('abc');
 });
 
-test('favors process.env over default val', () => {
+test('readVar favors process.env over default val', () => {
     const { readVar } = getModuleUnderTestWithConf({
         FOO: {
             default: 'abc',
@@ -31,7 +31,7 @@ test('favors process.env over default val', () => {
     delete process.env.FOO;
 });
 
-test('favors process.env over default val', () => {
+test('readVar favors process.env over default val', () => {
     const { readVar } = getModuleUnderTestWithConf({
         FOO: {
             default: 'abc',
@@ -43,7 +43,7 @@ test('favors process.env over default val', () => {
     delete process.env.FOO;
 });
 
-test('coerces non-string default value to string', () => {
+test('readVar coerces non-string default value to string', () => {
     const { readVar } = getModuleUnderTestWithConf({
         FOO: {
             default: 1,
@@ -53,7 +53,7 @@ test('coerces non-string default value to string', () => {
     expect(readVar('FOO')).toEqual('1');
 });
 
-test('null default === required', () => {
+test('readVar null default === required', () => {
     const { readVar } = getModuleUnderTestWithConf({
         FOO: {
             default: null,
@@ -62,4 +62,26 @@ test('null default === required', () => {
     });
     const fn = () => readVar('FOO');
     expect(fn).toThrow(/missing required/i);
+});
+
+test('isVarDefined is true for user-defined vars', () => {
+    const { isVarDefined } = getModuleUnderTestWithConf({
+        FOO: {
+            default: null,
+            description: 'anything',
+        },
+    });
+    process.env.FOO = 'any value';
+    expect(isVarDefined('FOO')).toBe(true);
+    delete process.env.FOO;
+});
+
+test('isVarDefined is false for vars not defined by user', () => {
+    const { isVarDefined } = getModuleUnderTestWithConf({
+        FOO: {
+            default: null,
+            description: 'anything',
+        },
+    });
+    expect(isVarDefined('FOO')).toBe(false);
 });

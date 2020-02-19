@@ -2,7 +2,9 @@ import variables from './variables.json';
 
 /**
  * @summary Read an environment variable. All variables
- *          must be defined in variables.json
+ *          must be defined in variables.json. Throws an
+ *          exception with a clear message when a variable
+ *          has no default value and is not defined
  */
 export function readVar(name: keyof typeof variables): string {
     const value = process.env[name];
@@ -26,4 +28,11 @@ export function readVar(name: keyof typeof variables): string {
         `Missing required environment variable "${name}"\n` +
             `  - ${name}: ${descriptor.description}`,
     );
+}
+
+/**
+ * @summary Check if a known environment variable has been defined.
+ */
+export function isVarDefined(name: keyof typeof variables): Boolean {
+    return process.env.hasOwnProperty(name);
 }
