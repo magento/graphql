@@ -1,4 +1,4 @@
-import fetch from 'isomorphic-fetch';
+import fetch from 'node-fetch';
 import { DocumentNode } from 'graphql';
 import { readVar } from './env';
 import { URL } from 'url';

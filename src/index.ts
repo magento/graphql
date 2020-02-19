@@ -8,14 +8,15 @@ import {
 } from 'apollo-server';
 import { getAllPackages, mergePackageConfigs } from './localPackages';
 import { join } from 'path';
-import { HttpLink } from 'apollo-link-http';
-import fetch from 'isomorphic-fetch';
+
 import { readVar, isVarDefined } from './env';
 import {
     FunctionDirectiveVisitor,
     prependPkgNameToFunctionDirectives,
 } from './FunctionDirectiveVisitor';
 import { getAllRemoteGQLSchemas } from './adobe-io';
+import { createMonolithFetcher } from './monolith-fetcher';
+import fetch from 'node-fetch';
 
 export async function main() {
     const localExtensions = await collectLocalExtensions();
@@ -39,11 +40,21 @@ export async function main() {
     }
 
     const server = new ApolloServer({
-        schema: mergeSchemas({ schemas }),
+        schema: mergeSchemas({
+            schemas,
+            // The mergeSchemas function, by default, loses built-in
+            // directives (even though they're required by the spec).
+            mergeDirectives: true,
+        }),
         dataSources: localExtensions.dataSources,
         schemaDirectives: {
             function: FunctionDirectiveVisitor,
         },
+        context: ({ req }) => ({
+            legacyToken: req.headers.authorization,
+            currency: req.headers['Content-Currency'],
+            store: req.headers.Store,
+        }),
     });
     const serverInfo = await server.listen();
     console.log(`GraphQL server is running at: ${serverInfo.url}`);
@@ -114,21 +125,26 @@ async function collectRemoteExtensions() {
  */
 async function getExecutableFallbackSchema() {
     const url = readVar('LEGACY_GRAPHQL_URL');
-    const link = new HttpLink({ uri: url, fetch });
+    const fetcher = createMonolithFetcher(
+        url,
+        (fetch as unknown) as WindowOrWorkerGlobalScope['fetch'],
+    );
+
     let rawMonolithSchema;
 
     try {
-        rawMonolithSchema = await introspectSchema(link);
+        rawMonolithSchema = await introspectSchema(fetcher);
     } catch (err) {
         throw new Error(
             `Failed introspecting remote Magento schema at "${url}". ` +
-                'Make sure that the LEGACY_GRAPHQL_URL variable ' +
-                'has the correct value for your Magento instance',
+                'Make sure that the LEGACY_GRAPHQL_URL variable has the ' +
+                'correct value for your Magento instance',
         );
     }
+
     return makeRemoteExecutableSchema({
         schema: rawMonolithSchema,
-        link,
+        fetcher,
     });
 }
 
