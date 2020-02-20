@@ -17,6 +17,7 @@ A package is a combination of a few things required to extend the GraphQL API:
 ```js
 // packages/<your-package>/index.ts
 import { IResolvers } from '../../../generated/graphql';
+import { GraphQLContext } from '../../types';
 import { gql } from 'apollo-server';
 
 export function setup() {
@@ -33,9 +34,12 @@ export function setup() {
             newQuery(input: MyNewInput): NewQueryReply
         }
     `;
-    const resolvers: IResolvers = {
+
+    type Context = GraphQLContext<{ someAPI: SomeAPIDataSource }>;
+    const resolvers: IResolvers<Context> = {
         Query: {
-            newQuery(parent, args) {
+            newQuery(parent, args, context) {
+                // dataSources availalble on context.dataSources
                 const { name } = args.input;
                 return { value: name };
             },
