@@ -17,6 +17,7 @@ import {
 import { getAllRemoteGQLSchemas } from './adobe-io';
 import { createMonolithFetcher } from './monolith-fetcher';
 import fetch from 'node-fetch';
+import { GraphQLContext } from './types';
 
 export async function main() {
     const localExtensions = await collectLocalExtensions();
@@ -50,10 +51,10 @@ export async function main() {
         schemaDirectives: {
             function: FunctionDirectiveVisitor,
         },
-        context: ({ req }) => ({
+        context: ({ req }): Omit<GraphQLContext, 'dataSources'> => ({
             legacyToken: req.headers.authorization,
-            currency: req.headers['Content-Currency'],
-            store: req.headers.Store,
+            currency: req.headers['Content-Currency'] as string | undefined,
+            store: req.headers.Store as string | undefined,
         }),
     });
     const serverInfo = await server.listen();

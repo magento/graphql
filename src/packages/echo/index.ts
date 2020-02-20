@@ -1,6 +1,7 @@
 import { IResolvers } from '../../../generated/graphql';
 import { EchoDataSource } from './EchoDataSource';
 import { gql } from 'apollo-server';
+import { GraphQLContext } from '../../types';
 
 export function setup() {
     const typeDefs = gql`
@@ -17,7 +18,8 @@ export function setup() {
         }
     `;
 
-    const resolvers: IResolvers = {
+    type Context = GraphQLContext<{ echo: EchoDataSource }>;
+    const resolvers: IResolvers<Context> = {
         Query: {
             echo: async (_parent, args, context) => {
                 const { echo } = context.dataSources;
