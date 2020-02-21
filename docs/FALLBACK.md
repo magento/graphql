@@ -9,3 +9,7 @@ Instead, schema ownership and resolvers will slowly be migrated to this applicat
 ## Extensions
 
 At this time, extensions to this GraphQL application are only intended to extend the schema defined by this application. In other words, once the Catalog schema + resolvers are migrated to this application, we'll support extensions. Until then, extensions to the Magento Core schema should continue to be written in PHP as Magento modules.
+
+## Magento Headers and Authentication
+
+When requests fall back to PHP GraphQL, necessary headers will automatically be proxied to the Magento store (`Authorization`, `Store`, and `Content-Currency`).

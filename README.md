@@ -2,10 +2,13 @@
 
 Decoupled GraphQL Server for Magento 2 stores.
 
-## Prerequisites
+## Documentation
 
--   Must have a store based on the [ECP fork of Magento 2](https://github.com/magento-architects/magento2ce), with a branch that includes gRPC functionality (example: `grpc2`)
--   Must have [`roadrunner`](https://github.com/spiral/roadrunner) running alongside the ECP m2 fork. A sample config will be in the root dir of the Magento store (`.rr.yaml`)
+-   [Configuration Options (set via ENV vars)](src/env/variables.json)
+-   [In-Process Extensions](src/packages/README.md)
+-   [Out-Of-Process Extensions](docs/OUT-OF-PROCESS-EXTENSIBILITY.md)
+-   [Code Generation](docs/CODEGEN.md)
+-   [Magento Monolith Fallback](docs/FALLBACK.md)
 
 ## Running Locally
 
@@ -42,9 +45,3 @@ If you're working locally, `npm run watch` will take care of the following tasks
 -   Watch `protosets/app.protoset`, and run gRPC fixture code generation on change
 
 It's recommended to use `npm run watch` in lieu of `npm run build` when making frequent changes locally.
-
-## Documentation
-
--   [Configuration Options (set via ENV vars)](src/env/variables.json)
--   [In-Process Extensions](src/packages/README.md)
--   [Out-Of-Process Extensions](docs/OUT-OF-PROCESS-EXTENSIBILITY.md)

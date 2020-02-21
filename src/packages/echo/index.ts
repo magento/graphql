@@ -2,6 +2,7 @@ import { IResolvers } from '../../../generated/graphql';
 import { EchoDataSource } from './EchoDataSource';
 import { gql } from 'apollo-server';
 import { GraphQLContext } from '../../types';
+import { readVar } from '../../env';
 
 export function setup() {
     const typeDefs = gql`
@@ -30,10 +31,9 @@ export function setup() {
         },
     };
 
-    const { ECHO_HOST = '0.0.0.0', ECHO_PORT = '9001' } = process.env;
     const echoClient = EchoDataSource.createClient({
-        host: ECHO_HOST,
-        port: Number(ECHO_PORT),
+        host: readVar('ECHO_HOST'),
+        port: Number(readVar('ECHO_PORT')),
     });
     const dataSources = () => ({
         echo: new EchoDataSource({ echoClient }),
