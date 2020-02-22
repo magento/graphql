@@ -19,6 +19,10 @@
         "description": "Hostname or IP of Adobe I/O",
         "default": "adobeioruntime.net"
     },
+    "IO_API_KEY": {
+        "description": "API Key used to authenticate with Adobe I/O Runtime",
+        "default": null
+    },
     "ENABLE_IO_FUNCTIONS": {
         "description": "Enable remote extension support with Adobe I/O functions",
         "default": ""

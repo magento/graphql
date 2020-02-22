@@ -1,6 +1,6 @@
 import { GraphQLField } from 'graphql';
 import { SchemaDirectiveVisitor } from 'apollo-server';
-import { invokeFunction } from './adobe-io';
+import { invokeRemoteResolver } from './adobe-io';
 import { DocumentNode, visit } from 'graphql';
 
 /**
@@ -45,11 +45,9 @@ export class FunctionDirectiveVisitor extends SchemaDirectiveVisitor {
                 parent,
                 args,
             };
-            return invokeFunction({
+            return invokeRemoteResolver({
                 action: this.args.name,
-                params: {
-                    resolverData: JSON.stringify(resolverData),
-                },
+                resolverData,
             });
         };
         field.resolve = resolver;
