@@ -1,18 +1,6 @@
-import fetch from 'node-fetch';
 import { DocumentNode } from 'graphql';
 import { readVar } from './env';
-import { URL } from 'url';
-
-// NOTE: We'll need to switch to the OpenWhisk SDK
-// instead of invoking functions over HTTP, since
-// making a function public makes it accessible to
-// _everyone_
-//
-// Not covering this file with tests because it's
-// all going to change
-
-const IO_RUNTIME_HOST = readVar('ADOBE_IO_HOST');
-const IO_NAMESPACE = readVar('ADOBE_IO_NAMESPACE');
+import openwhisk from 'openwhisk';
 
 /**
  * @summary Given an Adobe I/O namespace, will return a list
@@ -23,41 +11,78 @@ const IO_NAMESPACE = readVar('ADOBE_IO_NAMESPACE');
  */
 export async function getAllRemoteGQLSchemas(namespace: string) {
     const packages = await getRemoteMagentoPackages(namespace);
+    // Note: We purposely fail here if _any_ single package has an issue.
+    // We could technically recover and proceed with the working packages,
+    // skipping the failures, but it's likely better to fail hard as
+    // quickly as possible
     return Promise.all(
         packages.map(async pkg => {
-            // TODO: Document special "graphql"-named action
-            const schemaDef: DocumentNode = await invokeFunction({
-                action: `${pkg}/graphql`,
-            });
+            const schemaDef = await invokeGraphQLMetaFunction(pkg);
             return { schemaDef, pkg };
         }),
     );
 }
 
-/**
- * @summary Invoke an Adobe I/O function, optionally
- *          with parameters.
- *
- * @todo Need to switch to use the OpenWhisk SDK, because
- *       functions requiring authentication can't be invoked
- *       via a simple HTTP request
- */
-export async function invokeFunction(data: {
+type ResolverInput = {
     action: string;
-    params?: Record<string, any>;
-}) {
-    const url = new URL(
-        `https://${IO_RUNTIME_HOST}/api/v1/web/${IO_NAMESPACE}/${data.action}`,
-    );
-    if (data.params) {
-        for (const [param, value] of Object.entries(data.params)) {
-            url.searchParams.set(param, value);
-        }
-    }
-    const response = await fetch(url.toString(), {
-        method: data.params ? 'POST' : 'GET',
+    resolverData: {
+        parent: unknown;
+        args: unknown;
+    };
+};
+
+/**
+ * @summary Invoke a remote Adobe I/O GraphQL Resolver function
+ */
+export async function invokeRemoteResolver({
+    action,
+    resolverData,
+}: ResolverInput) {
+    const ow = getOWClient();
+
+    type Params = { resolverData: string };
+    type RemoteResolverPayload = { result: any };
+    const response = await ow.actions.invoke<Params, RemoteResolverPayload>({
+        name: action,
+        params: { resolverData: JSON.stringify(resolverData) },
+        blocking: true,
+        result: true,
     });
-    return response.json();
+
+    // TODO: run-time validation that I/O function response
+    // matches required format
+    return response.result;
+}
+
+/**
+ * @summary Invoke the special "graphql" function in a package
+ *          to obtain schema + remote resolver specs
+ */
+async function invokeGraphQLMetaFunction(pkg: string) {
+    const ow = getOWClient();
+
+    type GraphQLMetaPayload = { typeDefs: DocumentNode };
+    const response = await ow.actions.invoke<{}, GraphQLMetaPayload>({
+        name: `${pkg}/graphql`,
+        blocking: true,
+        result: true,
+    });
+
+    return response.typeDefs;
+}
+
+/**
+ * @summary Get a new instance of the OpenWhisk client
+ */
+function getOWClient() {
+    // Note: Don't want to keep around state, so we create
+    // a new ow instance for each API call. Perf overhead
+    // in quick check seems irrelevant (<0.1ms)
+    return openwhisk({
+        api_key: readVar('IO_API_KEY'),
+        apihost: readVar('ADOBE_IO_HOST'),
+        namespace: readVar('ADOBE_IO_NAMESPACE'),
+    });
 }
 
 /**
