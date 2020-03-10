@@ -12,22 +12,13 @@ const getModuleWithMockedInvoke = invokeMock => {
     return require('../adobe-io');
 };
 
-beforeEach(() => {
-    process.env.IO_API_KEY = 'IO_API_KEY';
-    process.env.ADOBE_IO_HOST = 'ADOBE_IO_HOST';
-    process.env.ADOBE_IO_NAMESPACE = 'ADOBE_IO_NAMESPACE';
-});
-
-afterEach(() => {
-    delete process.env.IO_API_KEY;
-    delete process.env.ADOBE_IO_HOST;
-    delete process.env.ADOBE_IO_NAMESPACE;
+const defaultIOOpts = () => ({
+    api_key: 'api_key',
+    apihost: 'apihost',
+    namespace: 'namespace',
 });
 
 test('getAllRemoteGQLSchemas fetches schema definitions from all gql packages', async () => {
-    // Note: 'store-locator-extension-0.0.1 is currently hardcoded as the only
-    // remote gql package in adobe-io.ts. Will need to mock the invoke call
-    // obtaining the list when that implementation is complete.
     const invokeMock = jest.fn().mockImplementation(async opts => {
         if (opts.name.endsWith('/graphql')) {
             return { typeDefs: {} };
@@ -36,9 +27,12 @@ test('getAllRemoteGQLSchemas fetches schema definitions from all gql packages', 
     });
     const { getAllRemoteGQLSchemas } = getModuleWithMockedInvoke(invokeMock);
 
-    const result = await getAllRemoteGQLSchemas('namespace');
+    const result = await getAllRemoteGQLSchemas(
+        ['foo-extension-0.0.1'],
+        defaultIOOpts(),
+    );
     const pkgs = result.map(r => r.pkg);
-    expect(pkgs).toEqual(['store-locator-extension-0.0.1']);
+    expect(pkgs).toEqual(['foo-extension-0.0.1']);
     expect(Object.keys(result[0])).toEqual(['schemaDef', 'pkg']);
 });
 
@@ -51,9 +45,9 @@ test('getAllRemoteGQLSchemas rejects graphql meta func call fails', async () => 
     });
     const { getAllRemoteGQLSchemas } = getModuleWithMockedInvoke(invokeMock);
 
-    expect(getAllRemoteGQLSchemas('namespace')).rejects.toThrow(
-        /gql meta func failure/,
-    );
+    expect(
+        getAllRemoteGQLSchemas(['foo-extension-0.0.1'], defaultIOOpts()),
+    ).rejects.toThrow(/gql meta func failure/);
 });
 
 test('invokeRemoteResolver sends serialized resolver data and returns "result" key from payload', async () => {
@@ -71,10 +65,13 @@ test('invokeRemoteResolver sends serialized resolver data and returns "result" k
     };
 
     expect(
-        invokeRemoteResolver({
-            action: 'pkgname/testfunc',
-            resolverData,
-        }),
+        invokeRemoteResolver(
+            {
+                action: 'pkgname/testfunc',
+                resolverData,
+            },
+            defaultIOOpts(),
+        ),
     ).resolves.toEqual('expected result');
     const passedParams = invokeMock.mock.calls[0][0].params;
     expect(passedParams.resolverData).toBe(JSON.stringify(resolverData));
