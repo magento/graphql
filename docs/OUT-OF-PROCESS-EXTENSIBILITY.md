@@ -1,6 +1,6 @@
 # Out of Process Extensibility
 
-The Magento GraphQL server enables developers to extend the graph by adding new queries/mutations/fields/etc via [Adobe I/O Runtime Functions](https://www.adobe.io/apis/experienceplatform/runtime.html). They are packaged as an Adobe I/O _Application_ that we'll call a _GraphQL Extension Package_.
+The Magento GraphQL server enables developers to extend the graph by adding new queries/mutations/fields/etc via [Adobe I/O Runtime Functions](https://www.adobe.io/apis/experienceplatform/runtime.html). They are packaged as an Adobe I/O _Application_ (built on [OpenWhisk Packages](https://github.com/apache/openwhisk/blob/e12c5de56aaf9e24a180f21f168204cf01125d1f/docs/packages.md)) that we'll call a _GraphQL Extension Package_.
 
 ## Writing Your First GraphQL Extension Package
 
@@ -53,7 +53,7 @@ To signal that an Adobe I/O app is a _GraphQL Extension Package_, it needs to ex
 
 ### Create a Resolver Action
 
-With our Schema specified, and a `hello` query defined, we need to create the `hello-resolver` action.
+With our Schema specified, and a `hello` query defined, we need to create the `hello-resolver` action (we specified this with the `@function` GraphQL directive in the previous step).
 
 1. In the `actions/` directory, create a new folder named `hello-resolver`, and an `index.js` with the following code:
 
@@ -119,6 +119,4 @@ With our Schema specified, and a `hello` query defined, we need to create the `h
 ### Configure the Magento GraphQL Server
 
 1. The following variables (defined in `src/env/variables.json`) will need to be set prior to starting the server:
-    - `ENABLE_IO_FUNCTIONS`
-    - `ADOBE_IO_NAMESPACE`
-2. Auto-discovery of GraphQL Extension Packages is not implemented yet. For now, GraphQL Extension Package name/versions are hardcoded, and must be changed manually in `src/adobe-io.ts` inside of the `getRemoteMagentoPackages` function.
+    - `IO_PACKAGES`: A comma-delimited list of GraphQL Extension Packages deployed to Adobe I/O Runtime.

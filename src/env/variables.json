@@ -23,8 +23,8 @@
         "description": "API Key used to authenticate with Adobe I/O Runtime",
         "default": null
     },
-    "ENABLE_IO_FUNCTIONS": {
-        "description": "Enable remote extension support with Adobe I/O functions",
-        "default": ""
+    "IO_PACKAGES": {
+        "description": "A comma-delimited list of Adobe I/O GraphQL Extension packages to enable",
+        "default": null
     }
 }

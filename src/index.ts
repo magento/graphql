@@ -24,13 +24,14 @@ export async function main() {
         // schemas are last-in-wins
         localExtensions.executableSchema,
     ];
-    if (isVarDefined('ENABLE_IO_FUNCTIONS')) {
+    if (isVarDefined('IO_PACKAGES')) {
         // remote extensions take precedence over local
         // extensions, to ensure remote extensions can
         // extend types when logic is moved from the monolith
         // to this server
         schemas.push(await collectRemoteExtensions());
     }
+
     if (isVarDefined('LEGACY_GRAPHQL_URL')) {
         // Monolith schema gets highest precedence. It's
         // intentional that you cannot override the monolith
@@ -85,8 +86,10 @@ async function collectLocalExtensions() {
 }
 
 async function collectRemoteExtensions() {
-    const ioNamespace = readVar('ADOBE_IO_NAMESPACE');
-    const ioSchemaDefs = await getAllRemoteGQLSchemas(ioNamespace);
+    const packages = readVar('IO_PACKAGES')
+        .split(',')
+        .map(s => s.trim());
+    const ioSchemaDefs = await getAllRemoteGQLSchemas(packages);
     const pkgNames = ioSchemaDefs.map(s => `  - ${s.pkg}`).join('\n');
     console.log(
         `Found ${ioSchemaDefs.length} remote I/O GraphQL package(s):\n${pkgNames}`,
@@ -111,6 +114,7 @@ async function collectRemoteExtensions() {
     });
     // Decorate @function directives with the proper Adobe I/O
     // package name
+    // TODO: @function directive should not be visible in the public schema
     FunctionDirectiveVisitor.visitSchemaDirectives(ioSchema, {
         function: FunctionDirectiveVisitor,
     });

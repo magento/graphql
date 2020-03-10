@@ -9,15 +9,17 @@ import openwhisk from 'openwhisk';
  *          is defined as any Adobe I/O *application* that
  *          exposes a function named "graphql"
  */
-export async function getAllRemoteGQLSchemas(namespace: string) {
-    const packages = await getRemoteMagentoPackages(namespace);
+export async function getAllRemoteGQLSchemas(
+    packages: string[],
+    io: openwhisk.Options = getOWClientOptsFromEnv(),
+) {
     // Note: We purposely fail here if _any_ single package has an issue.
     // We could technically recover and proceed with the working packages,
     // skipping the failures, but it's likely better to fail hard as
     // quickly as possible
     return Promise.all(
         packages.map(async pkg => {
-            const schemaDef = await invokeGraphQLMetaFunction(pkg);
+            const schemaDef = await invokeGraphQLMetaFunction(pkg, io);
             return { schemaDef, pkg };
         }),
     );
@@ -34,11 +36,11 @@ type ResolverInput = {
 /**
  * @summary Invoke a remote Adobe I/O GraphQL Resolver function
  */
-export async function invokeRemoteResolver({
-    action,
-    resolverData,
-}: ResolverInput) {
-    const ow = getOWClient();
+export async function invokeRemoteResolver(
+    { action, resolverData }: ResolverInput,
+    io: openwhisk.Options = getOWClientOptsFromEnv(),
+) {
+    const ow = openwhisk(io);
 
     type Params = { resolverData: string };
     type RemoteResolverPayload = { result: any };
@@ -58,8 +60,8 @@ export async function invokeRemoteResolver({
  * @summary Invoke the special "graphql" function in a package
  *          to obtain schema + remote resolver specs
  */
-async function invokeGraphQLMetaFunction(pkg: string) {
-    const ow = getOWClient();
+async function invokeGraphQLMetaFunction(pkg: string, io: openwhisk.Options) {
+    const ow = openwhisk(io);
 
     type GraphQLMetaPayload = { typeDefs: DocumentNode };
     const response = await ow.actions.invoke<{}, GraphQLMetaPayload>({
@@ -71,30 +73,10 @@ async function invokeGraphQLMetaFunction(pkg: string) {
     return response.typeDefs;
 }
 
-/**
- * @summary Get a new instance of the OpenWhisk client
- */
-function getOWClient() {
-    // Note: Don't want to keep around state, so we create
-    // a new ow instance for each API call. Perf overhead
-    // in quick check seems irrelevant (<0.1ms)
-    return openwhisk({
+export function getOWClientOptsFromEnv() {
+    return {
         api_key: readVar('IO_API_KEY'),
         apihost: readVar('ADOBE_IO_HOST'),
         namespace: readVar('ADOBE_IO_NAMESPACE'),
-    });
-}
-
-/**
- * @summary Find all packages within a namespace
- *          that are Magento GraphQL packages.
- *
- * @todo    The list of packages is currently
- *          hard-coded. In the future, this function
- *          will return a list of all I/O apps in an
- *          I/O namespace that expose a function named
- *          "graphql"
- */
-async function getRemoteMagentoPackages(namespace: string) {
-    return ['store-locator-extension-0.0.1'];
+    };
 }
