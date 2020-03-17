@@ -1,5 +1,5 @@
 const { join } = require('path');
-const { gql } = require('apollo-server');
+const gql = require('graphql-tag');
 const { getAllPackages, mergePackageConfigs } = require('../localPackages');
 
 test('getAllPackages finds a single package', async () => {
@@ -46,40 +46,38 @@ test('getAllPackages ignores directories starting with . or _', async () => {
 test('mergePackageConfigs merges 2 configs in order', () => {
     const package1 = {
         name: 'pkg1',
-        typeDefs: gql`
-            type Query {
-                foo: String
-            }
-        `,
+        typeDefs: [
+            gql`
+                type Query {
+                    foo: String
+                }
+            `,
+        ],
         resolvers: {
             Query: {
                 foo: () => 'a string',
             },
         },
-        dataSources: () => ({ fakeSource: {} }),
     };
 
     const package2 = {
         name: 'pkg2',
-        typeDefs: gql`
-            type Query {
-                bar: String
-            }
-        `,
+        typeDefs: [
+            gql`
+                type Query {
+                    bar: String
+                }
+            `,
+        ],
         resolvers: {
             Query: {
                 bar: () => 'a second string',
             },
         },
-        dataSources: () => ({ anotherFakeSource: {} }),
     };
 
     const merged = mergePackageConfigs([package1, package2]);
     expect(merged.names).toEqual(['pkg1', 'pkg2']);
     expect(merged.typeDefs).toHaveLength(2);
     expect(merged.resolvers).toHaveLength(2);
-    expect(merged.dataSources()).toEqual({
-        fakeSource: {},
-        anotherFakeSource: {},
-    });
 });

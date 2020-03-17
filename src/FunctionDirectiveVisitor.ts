@@ -1,5 +1,5 @@
 import { GraphQLField } from 'graphql';
-import { SchemaDirectiveVisitor } from 'apollo-server';
+import { SchemaDirectiveVisitor } from 'graphql-tools';
 import { invokeRemoteResolver } from './adobe-io';
 import { DocumentNode, visit } from 'graphql';
 

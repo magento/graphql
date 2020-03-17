@@ -1,19 +1,17 @@
-const { gql } = require('apollo-server');
+const gql = require('graphql-tag');
 
 module.exports = {
-    setup() {
-        return {
-            typeDefs: gql`
-                type Query {
-                    hello: String
-                }
-            `,
-            resolvers: {
-                Query: {
-                    hello: () => 'a string',
-                },
+    setup(api) {
+        api.addTypeDefs(gql`
+            type Query {
+                hello: String
+            }
+        `);
+
+        api.addResolvers({
+            Query: {
+                hello: () => 'a string',
             },
-            dataSources: () => ({}),
-        };
+        });
     },
 };

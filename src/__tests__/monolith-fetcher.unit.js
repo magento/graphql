@@ -1,4 +1,4 @@
-const { gql } = require('apollo-server');
+const gql = require('graphql-tag');
 const { createMonolithFetcher } = require('../monolith-fetcher');
 const { Response } = require('node-fetch');
 

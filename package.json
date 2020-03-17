@@ -14,10 +14,13 @@
   "author": "Adobe Inc.",
   "license": "UNLICENSED",
   "dependencies": {
-    "apollo-server": "^2.9.12",
+    "fastify": "^2.12.1",
+    "fastify-gql": "^3.0.7",
     "fromentries": "^1.2.0",
     "google-protobuf": "^3.11.2",
-    "graphql": "^14.5.8",
+    "graphql": "^14.6.0",
+    "graphql-tag": "^2.10.3",
+    "graphql-tools": "^4.0.7",
     "grpc": "^1.24.2",
     "node-fetch": "^2.6.0",
     "openwhisk": "^3.21.1"

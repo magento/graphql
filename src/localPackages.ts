@@ -2,14 +2,44 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { IResolvers } from '../generated/graphql';
 import { DocumentNode } from 'graphql';
-import { DataSource } from 'apollo-datasource';
 
 export type GQLPackage = {
     name: string;
-    typeDefs: DocumentNode;
+    typeDefs: DocumentNode[];
     resolvers: IResolvers;
-    dataSources: () => Record<string, DataSource>;
 };
+
+export type ExtensionAPI = {
+    addTypeDefs: (defs: DocumentNode | DocumentNode[]) => ExtensionAPI;
+    addResolvers: (resolvers: IResolvers) => ExtensionAPI;
+};
+
+function invokeExtensionSetup(
+    name: string,
+    setupFunc: (api: ExtensionAPI) => void,
+): GQLPackage {
+    const registration = {
+        name,
+        typeDefs: [] as DocumentNode[],
+        resolvers: {} as IResolvers,
+    };
+
+    const extensionAPI: ExtensionAPI = {
+        addTypeDefs(defs) {
+            registration.typeDefs.push(
+                ...(Array.isArray(defs) ? defs : [defs]),
+            );
+            return extensionAPI;
+        },
+        addResolvers(resolvers) {
+            Object.assign(registration.resolvers, resolvers);
+            return extensionAPI;
+        },
+    };
+
+    setupFunc(extensionAPI);
+    return registration;
+}
 
 /**
  * @summary Find all local (in-process) Magento GraphQL packages,
@@ -37,36 +67,17 @@ export function mergePackageConfigs(packages: GQLPackage[]) {
     const names = [];
     const typeDefs = [];
     const resolvers = [];
-    const dataSourceFuncs = [];
 
     for (const pkg of packages) {
         names.push(pkg.name);
-        typeDefs.push(pkg.typeDefs);
+        typeDefs.push(...pkg.typeDefs);
         resolvers.push(pkg.resolvers);
-        dataSourceFuncs.push(pkg.dataSources);
     }
 
     return {
         names,
         typeDefs,
         resolvers,
-        dataSources: mergeDataSourceFuncs(dataSourceFuncs),
-    };
-}
-
-type DataSourceFuncs<T extends DataSource> = () => Record<string, T>;
-/**
- * @summary Unlike most options to the ApolloServer constructor,
- *          it does _not_ take a [] of dataSources fns, so we need
- *          to combine them manually
- */
-function mergeDataSourceFuncs<T>(sourceFns: DataSourceFuncs<T>[]) {
-    return () => {
-        return sourceFns.reduce((acc, fn) => {
-            const result = fn();
-            Object.assign(acc, result);
-            return acc;
-        }, {} as Record<string, T>);
     };
 }
 
@@ -98,8 +109,7 @@ const getPotentialPackage = (
     }
 
     try {
-        const { typeDefs, resolvers, dataSources } = pkg.setup() as GQLPackage;
-        return { name: dir, typeDefs, resolvers, dataSources };
+        return invokeExtensionSetup(dir, pkg.setup);
     } catch (err) {
         console.warn(`Failed running setup() function: ${indexPath}`);
     }

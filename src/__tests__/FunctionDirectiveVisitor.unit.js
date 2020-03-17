@@ -1,5 +1,6 @@
 const { visit } = require('graphql');
-const { gql, makeExecutableSchema } = require('apollo-server');
+const gql = require('graphql-tag');
+const { makeExecutableSchema } = require('graphql-tools');
 const {
     prependPkgNameToFunctionDirectives,
     FunctionDirectiveVisitor,

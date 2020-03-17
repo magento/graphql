@@ -1,6 +1,7 @@
 import { FetcherOperation } from 'graphql-tools/dist/stitching/makeRemoteExecutableSchema';
 import { print } from 'graphql';
 import fromentries from 'fromentries';
+import { GraphQLContext } from './types';
 
 /**
  * @summary Create a custom "Fetcher" for Apollo Server to use when
@@ -40,9 +41,10 @@ export function createMonolithFetcher(
  * @summary Generate required headers for the PHP monolith,
  *          using values set per-request on context
  * @see     https://devdocs.magento.com/guides/v2.3/graphql/send-request.html#request-headers
- * @todo    Proper typings for `context`
  */
-function monolithHeadersFromContext(context: any) {
+function monolithHeadersFromContext(context: {
+    graphqlContext: GraphQLContext;
+}) {
     const { graphqlContext } = context;
     // Unlike JSON.stringify, `Headers` (used by `fetch`)
     // does _not_ exclude keys with undefined values

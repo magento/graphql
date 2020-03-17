@@ -1,10 +1,9 @@
 # Packages
 
-A package is a combination of a few things required to extend the GraphQL API:
+A package is a combination of 2 things required to extend the GraphQL API:
 
 1. Type Definitions
 2. Resolvers
-3. Data Sources
 
 ## Creating a new Package
 
@@ -18,9 +17,10 @@ A package is a combination of a few things required to extend the GraphQL API:
 // packages/<your-package>/index.ts
 import { IResolvers } from '../../../generated/graphql';
 import { GraphQLContext } from '../../types';
-import { gql } from 'apollo-server';
+import { ExtensionAPI } from '../../localPackages';
+import gql from 'graphql-tag';
 
-export function setup() {
+export function setup(api: ExtensionAPI) {
     const typeDefs = gql`
         type MyNewInput = {
             name: value
@@ -35,27 +35,22 @@ export function setup() {
         }
     `;
 
-    type Context = GraphQLContext<{ someAPI: SomeAPIDataSource }>;
-    const resolvers: IResolvers<Context> = {
+    const resolvers: IResolvers<GraphQLContext> = {
         Query: {
             newQuery(parent, args, context) {
-                // dataSources availalble on context.dataSources
-                const { name } = args.input;
+                // your code here
                 return { value: name };
             },
         },
     };
-    const dataSources = () => ({
-        someAPI: new SomeAPIDataSource(),
-    });
 
-    return { typeDefs, resolvers, dataSources };
+    api.addTypeDefs(typeDefs).addResolvers(resolvers);
 }
 ```
 
 ## Working Example
 
-See [`src/packages/echo/`](/src/packages/echo/) for an example of a package that also includes a remote data source.
+See [`src/packages/echo/`](/src/packages/echo/) for an example of a package that fetches data from a remote API.
 
 ## Caveats
 
