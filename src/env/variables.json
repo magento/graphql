@@ -1,4 +1,8 @@
 {
+    "PORT": {
+        "description": "Port for the server to listen on",
+        "default": "4000"
+    },
     "ECHO_HOST": {
         "description": "Hostname or IP of echo gRPC service",
         "default": "0.0.0.0"

@@ -1,10 +1,5 @@
-import { DataSource } from 'apollo-datasource';
-
-export type GraphQLContext<
-    DataSources extends Record<string, DataSource> = {}
-> = {
+export type GraphQLContext = {
     legacyToken?: string;
     currency?: string;
     store?: string;
-    dataSources: DataSources;
 };

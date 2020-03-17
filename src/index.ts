@@ -1,11 +1,12 @@
+import gql from 'graphql-tag';
 import {
-    ApolloServer,
     introspectSchema,
     makeRemoteExecutableSchema,
-    mergeSchemas,
     makeExecutableSchema,
-    gql,
-} from 'apollo-server';
+    mergeSchemas,
+} from 'graphql-tools';
+import fastify, { FastifyRequest } from 'fastify';
+import fastifyGQL from 'fastify-gql';
 import { getAllPackages, mergePackageConfigs } from './localPackages';
 import { join } from 'path';
 import { readVar, isVarDefined } from './env';
@@ -16,6 +17,7 @@ import {
 import { getAllRemoteGQLSchemas } from './adobe-io';
 import { createMonolithFetcher } from './monolith-fetcher';
 import fetch from 'node-fetch';
+import { assert } from './assert';
 import { GraphQLContext } from './types';
 
 export async function main() {
@@ -40,25 +42,34 @@ export async function main() {
         schemas.push(await getExecutableFallbackSchema());
     }
 
-    const server = new ApolloServer({
+    const fastifyServer = fastify();
+    fastifyServer.register(fastifyGQL, {
         schema: mergeSchemas({
             schemas,
             // The mergeSchemas function, by default, loses built-in
             // directives (even though they're required by the spec).
             mergeDirectives: true,
         }),
-        dataSources: localExtensions.dataSources,
-        schemaDirectives: {
-            function: FunctionDirectiveVisitor,
-        },
-        context: ({ req }): Omit<GraphQLContext, 'dataSources'> => ({
+        graphiql: 'playground',
+        path: '/graphql',
+        jit: 10,
+        context: (req: FastifyRequest): GraphQLContext => ({
             legacyToken: req.headers.authorization,
             currency: req.headers['Content-Currency'] as string | undefined,
             store: req.headers.Store as string | undefined,
         }),
     });
-    const serverInfo = await server.listen();
-    console.log(`GraphQL server is running at: ${serverInfo.url}`);
+
+    await fastifyServer.listen(readVar('PORT'));
+    const netAddress = fastifyServer.server.address();
+    assert(
+        netAddress && typeof netAddress === 'object',
+        'Unexpected binding to pipe/socket',
+    );
+    const address = `http://${netAddress.address}:${netAddress.port}`;
+
+    console.log(`Server listening: ${address}`);
+    console.log(`graphiql UI: ${address}/playground`);
 }
 
 /**
@@ -81,7 +92,6 @@ async function collectLocalExtensions() {
 
     return {
         executableSchema,
-        dataSources: mergedLocalPkgConfigs.dataSources,
     };
 }
 
