@@ -75,8 +75,8 @@ async function invokeGraphQLMetaFunction(pkg: string, io: openwhisk.Options) {
 
 export function getOWClientOptsFromEnv() {
     return {
-        api_key: readVar('IO_API_KEY'),
-        apihost: readVar('ADOBE_IO_HOST'),
-        namespace: readVar('ADOBE_IO_NAMESPACE'),
+        api_key: readVar('IO_API_KEY').asString(),
+        apihost: readVar('ADOBE_IO_HOST').asString(),
+        namespace: readVar('ADOBE_IO_NAMESPACE').asString(),
     };
 }

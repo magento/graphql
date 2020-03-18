@@ -1,40 +1,67 @@
-import variables from './variables.json';
-
 /* eslint-disable no-process-env */
 
-/**
- * @summary Read an environment variable. All variables
- *          must be defined in variables.json. Throws an
- *          exception with a clear message when a variable
- *          has no default value and is not defined
- */
-export function readVar(name: keyof typeof variables): string {
-    const value = process.env[name];
+const configDef = {
+    PORT: {
+        docs: 'Port for GraphQL server to bind to',
+        default: 4000,
+    },
+    ECHO_HOST: {
+        docs: 'Hostname or IP of echo gRPC service',
+        default: '0.0.0.0',
+    },
+    ECHO_PORT: {
+        docs: 'Port of echo gRPC service',
+        default: 9001,
+    },
+    LEGACY_GRAPHQL_URL: {
+        docs: 'Absolute URL of Magento Core GraphQL endpoint',
+    },
+    ADOBE_IO_HOST: {
+        docs: 'Hostname or IP of Adobe I/O',
+        default: 'adobeioruntime.net',
+    },
+    ADOBE_IO_NAMESPACE: {
+        docs: 'Namespace to query for Adobe I/O extension packages',
+        default: 'ecp-ior',
+    },
+    IO_API_KEY: {
+        docs: 'API Key used to authenticate with Adobe I/O Runtime',
+    },
+    IO_PACKAGES: {
+        docs:
+            'A comma-delimited list of Adobe I/O GraphQL Extension packages to enable',
+    },
+};
 
-    if (process.env.hasOwnProperty(name)) {
-        return value as string;
+const getValue = (name: keyof typeof configDef) =>
+    process.env.hasOwnProperty(name)
+        ? process.env[name]
+        : ((configDef[name] as any).default as string | undefined);
+
+/**
+ * @summary Read an environment variable in a type-safe manner,
+ *          falling back to default values when available
+ *
+ */
+export function readVar(name: keyof typeof configDef) {
+    const value = getValue(name);
+
+    if (typeof value === 'undefined') {
+        const errMsg = [
+            'Missing required environment variable',
+            `  Name: ${name}`,
+            `  Description: ${configDef[name].docs}`,
+        ];
+        throw new Error(errMsg.join('\n'));
     }
 
-    const descriptor = variables[name];
-
-    const hasDefault = descriptor.default !== null;
-    if (hasDefault) {
-        // process.env vals set outside the process
-        // will always be strings, so we cast defaults
-        // to remain consistent, in case someone uses
-        // a numeric value in variables.json
-        return String(descriptor.default);
-    }
-
-    throw new Error(
-        `Missing required environment variable "${name}"\n` +
-            `  - ${name}: ${descriptor.description}`,
-    );
+    return {
+        asString: () => String(value),
+        asNumber: () => Number(value),
+        asBoolean: () => !!value,
+        asArray: () => value.split(',').map(s => s.trim()),
+    };
 }
 
-/**
- * @summary Check if a known environment variable has been defined.
- */
-export function isVarDefined(name: keyof typeof variables): Boolean {
-    return process.env.hasOwnProperty(name);
-}
+export const hasVar = (name: keyof typeof configDef) =>
+    typeof getValue(name) !== 'undefined';

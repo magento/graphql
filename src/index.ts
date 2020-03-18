@@ -9,7 +9,7 @@ import fastify, { FastifyRequest } from 'fastify';
 import fastifyGQL from 'fastify-gql';
 import { getAllPackages, mergePackageConfigs } from './localPackages';
 import { join } from 'path';
-import { readVar, isVarDefined } from './env';
+import { readVar, hasVar } from './env';
 import {
     FunctionDirectiveVisitor,
     prependPkgNameToFunctionDirectives,
@@ -26,20 +26,25 @@ export async function main() {
         // schemas are last-in-wins
         localExtensions.executableSchema,
     ];
-    if (isVarDefined('IO_PACKAGES')) {
+    if (hasVar('IO_PACKAGES')) {
+        const packages = readVar('IO_PACKAGES').asArray();
         // remote extensions take precedence over local
         // extensions, to ensure remote extensions can
         // extend types when logic is moved from the monolith
         // to this server
-        schemas.push(await collectRemoteExtensions());
+        schemas.push(await prepareRemoteExtensionSchemas(packages));
     }
 
-    if (isVarDefined('LEGACY_GRAPHQL_URL')) {
+    if (hasVar('LEGACY_GRAPHQL_URL')) {
         // Monolith schema gets highest precedence. It's
         // intentional that you cannot override the monolith
         // schema (if you need to extend the monolith schema, it
         // should be done in the monolith)
-        schemas.push(await getExecutableFallbackSchema());
+        schemas.push(
+            await prepareFallbackSchema(
+                readVar('LEGACY_GRAPHQL_URL').asString(),
+            ),
+        );
     }
 
     const fastifyServer = fastify();
@@ -60,7 +65,7 @@ export async function main() {
         }),
     });
 
-    await fastifyServer.listen(readVar('PORT'));
+    await fastifyServer.listen(readVar('PORT').asNumber());
     const netAddress = fastifyServer.server.address();
     assert(
         netAddress && typeof netAddress === 'object',
@@ -95,10 +100,7 @@ async function collectLocalExtensions() {
     };
 }
 
-async function collectRemoteExtensions() {
-    const packages = readVar('IO_PACKAGES')
-        .split(',')
-        .map(s => s.trim());
+async function prepareRemoteExtensionSchemas(packages: string[]) {
     const ioSchemaDefs = await getAllRemoteGQLSchemas(packages);
     const pkgNames = ioSchemaDefs.map(s => `  - ${s.pkg}`).join('\n');
     console.log(
@@ -137,10 +139,9 @@ async function collectRemoteExtensions() {
  *          and create an executable schema with resolvers that
  *          delegate queries back to the monolith
  */
-async function getExecutableFallbackSchema() {
-    const url = readVar('LEGACY_GRAPHQL_URL');
+async function prepareFallbackSchema(legacyURL: string) {
     const fetcher = createMonolithFetcher(
-        url,
+        legacyURL,
         (fetch as unknown) as WindowOrWorkerGlobalScope['fetch'],
     );
 
@@ -150,7 +151,7 @@ async function getExecutableFallbackSchema() {
         rawMonolithSchema = await introspectSchema(fetcher);
     } catch (err) {
         throw new Error(
-            `Failed introspecting remote Magento schema at "${url}". ` +
+            `Failed introspecting remote Magento schema at "${legacyURL}". ` +
                 'Make sure that the LEGACY_GRAPHQL_URL variable has the ' +
                 'correct value for your Magento instance',
         );

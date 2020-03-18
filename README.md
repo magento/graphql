@@ -5,7 +5,7 @@ Decoupled GraphQL Server for Magento 2 stores.
 ## Documentation
 
 -   [Research (Internal Wiki)](https://wiki.corp.adobe.com/display/EntComm/GraphQL)
--   [Configuration Options (set via ENV vars)](src/env/variables.json)
+-   [Configuration Options (set via ENV vars)](src/env/index.ts)
 -   [In-Process Extensions](src/packages/README.md)
 -   [Out-Of-Process Extensions](docs/OUT-OF-PROCESS-EXTENSIBILITY.md)
 -   [Code Generation](docs/CODEGEN.md)

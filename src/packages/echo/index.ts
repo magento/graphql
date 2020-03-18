@@ -27,8 +27,8 @@ export function setup(api: ExtensionAPI) {
     `;
 
     const echo = new EchoService({
-        host: readVar('ECHO_HOST'),
-        port: Number(readVar('ECHO_PORT')),
+        host: readVar('ECHO_HOST').asString(),
+        port: readVar('ECHO_PORT').asNumber(),
     });
 
     // 3rd parties probably won't have access to `IResolvers`.
