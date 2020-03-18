@@ -1,9 +1,9 @@
-const gql = require('graphql-tag');
-const { createMonolithFetcher } = require('../monolith-fetcher');
-const { Response } = require('node-fetch');
+import gql from 'graphql-tag';
+import { createMonolithFetcher } from '../monolith-fetcher';
+import { Response } from 'node-fetch';
 
-const fetchJSONStub = resString =>
-    jest.fn().mockImplementation(async () => new Response(resString));
+const fetchJSONStub = (res: string) =>
+    jest.fn().mockImplementation(async () => new Response(res));
 
 const SAMPLE_QUERY = gql`
     query {
