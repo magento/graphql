@@ -24,7 +24,7 @@ Decoupled GraphQL Server for Magento 2 stores.
 2. Start the server:
     ```sh
     docker run -p 4000:4000 --rm \
-        # see config options further below
+        # see config options in src/env/index.ts
         -e ECHO_HOST=host.docker.internal \
         graphql:latest
     ```
