@@ -20,7 +20,8 @@ export function createMonolithFetcher(
             'Content-Type': 'application/json',
         };
         if (opts.context) {
-            Object.assign(headers, monolithHeadersFromContext(opts.context));
+            const graphqlContext: GraphQLContext = opts.context.graphqlContext;
+            Object.assign(headers, monolithHeadersFromContext(graphqlContext));
         }
 
         const result = await fetch(monolithGraphQLUrl, {
@@ -42,16 +43,13 @@ export function createMonolithFetcher(
  *          using values set per-request on context
  * @see     https://devdocs.magento.com/guides/v2.3/graphql/send-request.html#request-headers
  */
-function monolithHeadersFromContext(context: {
-    graphqlContext: GraphQLContext;
-}) {
-    const { graphqlContext } = context;
+function monolithHeadersFromContext(context: GraphQLContext) {
     // Unlike JSON.stringify, `Headers` (used by `fetch`)
     // does _not_ exclude keys with undefined values
     return excludeUndefinedValues({
-        Authorization: graphqlContext.legacyToken,
-        'Content-Currency': graphqlContext.currency,
-        Store: graphqlContext.store,
+        Authorization: context.legacyToken,
+        'Content-Currency': context.currency,
+        Store: context.store,
     });
 }
 
