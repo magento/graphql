@@ -7,9 +7,10 @@
   "scripts": {
     "build": "npm run clean && node scripts/protogen.js && gql-gen && tsc",
     "start": "node dist/index.js",
-    "test": "eslint . && jest",
+    "test": "eslint . && prettier --list-different $(head -1 prettier-globs) && jest",
     "watch": "scripts/dev.js",
-    "clean": "rm -rf dist generated"
+    "clean": "rm -rf dist generated",
+    "format": "prettier --write $(head -1 prettier-globs)"
   },
   "author": "Adobe Inc.",
   "license": "UNLICENSED",
@@ -42,6 +43,7 @@
     "execa": "^3.4.0",
     "grpc-tools": "^1.8.0",
     "jest": "^25.1.0",
+    "prettier": "^1.19.1",
     "protobufjs": "^6.8.8",
     "rimraf": "^3.0.1",
     "strip-ansi": "^6.0.0",
