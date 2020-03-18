@@ -1,5 +1,7 @@
 import variables from './variables.json';
 
+/* eslint-disable no-process-env */
+
 /**
  * @summary Read an environment variable. All variables
  *          must be defined in variables.json. Throws an

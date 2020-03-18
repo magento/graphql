@@ -1,0 +1,29 @@
+{
+    "root": true,
+    "env": {
+        "es2017": true,
+        "node": true
+    },
+    "extends": ["plugin:@typescript-eslint/eslint-recommended"],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": 2018,
+        "sourceType": "module"
+    },
+    "plugins": ["@typescript-eslint"],
+    "overrides": [
+        {
+            "files": ["**/__tests__/*.js"],
+            "rules": {
+                "no-process-env": "off"
+            }
+        }
+    ],
+    "rules": {
+        "no-global-assign": "error",
+        "no-unused-vars": "error",
+        "no-process-env": "error",
+        "no-implied-eval": "error",
+        "@typescript-eslint/no-namespace": "error"
+    }
+}
