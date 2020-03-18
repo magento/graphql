@@ -1,4 +1,6 @@
-const getModuleWithMockedInvoke = invokeMock => {
+import { Actions } from 'openwhisk';
+
+const getModuleWithMockedInvoke = (invokeMock: Actions['invoke']) => {
     jest.resetModules();
     jest.mock('openwhisk', () => {
         return function openwhiskMock() {
@@ -9,7 +11,7 @@ const getModuleWithMockedInvoke = invokeMock => {
             };
         };
     });
-    return require('../adobe-io');
+    return require('../adobe-io') as typeof import('../adobe-io');
 };
 
 const defaultIOOpts = () => ({
