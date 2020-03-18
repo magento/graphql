@@ -1,5 +1,9 @@
-let keysToClean = [];
-const envMock = dict => {
+/* eslint-disable no-process-env */
+
+import { readVar, hasVar } from '..';
+
+let keysToClean: string[] = [];
+const envMock = (dict: Record<string, string>) => {
     keysToClean = Object.keys(dict);
     Object.assign(process.env, dict);
 };
@@ -8,8 +12,6 @@ afterEach(() => {
     keysToClean.forEach(k => delete process.env[k]);
     keysToClean = [];
 });
-
-const { readVar, hasVar } = require('..');
 
 test('readVar returns default value when one is not specified', () => {
     expect(readVar('PORT').asNumber()).toBe(4000);

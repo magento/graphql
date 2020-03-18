@@ -1,6 +1,6 @@
-const { join } = require('path');
-const gql = require('graphql-tag');
-const { getAllPackages, mergePackageConfigs } = require('../localPackages');
+import { join } from 'path';
+import gql from 'graphql-tag';
+import { getAllPackages, mergePackageConfigs } from '../localPackages';
 
 test('getAllPackages finds a single package', async () => {
     const packagesDir = join(__dirname, '__fixtures__', 'packages-case-1');

@@ -1,13 +1,21 @@
-const { visit } = require('graphql');
-const gql = require('graphql-tag');
-const { makeExecutableSchema } = require('graphql-tools');
-const {
+import {
+    visit,
+    ASTNode,
+    DirectiveNode,
+    StringValueNode,
+    ArgumentNode,
+} from 'graphql';
+import gql from 'graphql-tag';
+import { makeExecutableSchema } from 'graphql-tools';
+import {
     prependPkgNameToFunctionDirectives,
     FunctionDirectiveVisitor,
-} = require('../FunctionDirectiveVisitor');
+} from '../FunctionDirectiveVisitor';
 
-const findDirectiveByName = (schema, name) => {
-    let foundNodes = [];
+type StringArgumentNode = ArgumentNode & { value: StringValueNode };
+
+const findDirectiveByName = (schema: ASTNode, name: string) => {
+    let foundNodes: DirectiveNode[] = [];
     visit(schema, {
         Directive(node) {
             if (node.name.value !== name) return;
@@ -24,7 +32,8 @@ test('prependPkgNameToFunctionDirectives works with 1 @function directive', () =
         }
     `;
     const result = prependPkgNameToFunctionDirectives(schema, 'foopkg');
-    const [firstArg] = findDirectiveByName(result, 'function')[0].arguments;
+    const [firstArg] = findDirectiveByName(result, 'function')[0]
+        .arguments as StringArgumentNode[];
     expect(firstArg.value.value).toBe('foopkg/foo-func');
 });
 
@@ -37,8 +46,11 @@ test('prependPkgNameToFunctionDirectives works with 2 @function directives', () 
     `;
     const result = prependPkgNameToFunctionDirectives(schema, 'foopkg');
     const [fooDir, barDir] = findDirectiveByName(result, 'function');
-    expect(fooDir.arguments[0].value.value).toBe('foopkg/foo-func');
-    expect(barDir.arguments[0].value.value).toBe('foopkg/bar-func');
+    const [firstFooArg] = fooDir.arguments as StringArgumentNode[];
+    const [firstBarArg] = barDir.arguments as StringArgumentNode[];
+
+    expect(firstFooArg.value.value).toBe('foopkg/foo-func');
+    expect(firstBarArg.value.value).toBe('foopkg/bar-func');
 });
 
 test('prependPkgNameToFunctionDirectives does not modify unrelated directives', () => {
@@ -52,7 +64,8 @@ test('prependPkgNameToFunctionDirectives does not modify unrelated directives', 
     const result = prependPkgNameToFunctionDirectives(schema, 'foopkg');
 
     const [somethingDir] = findDirectiveByName(result, 'something');
-    expect(somethingDir.arguments[0].value.value).toBe('asdf');
+    const [somethingFirstArg] = somethingDir.arguments as StringArgumentNode[];
+    expect(somethingFirstArg.value.value).toBe('asdf');
 });
 
 test('prependPkgNameToFunctionDirectives throws when missing name param', () => {
@@ -61,6 +74,7 @@ test('prependPkgNameToFunctionDirectives throws when missing name param', () => 
             foo: String @function
         }
     `;
+    // @ts-ignore Checking for 3rd parties who don't use TypeScript
     const fn = () => prependPkgNameToFunctionDirectives(schema);
     expect(fn).toThrow(/expected 1 argument to @function/i);
 });
@@ -71,6 +85,7 @@ test('prependPkgNameToFunctionDirectives throws with too many params', () => {
             foo: String @function(name: "func", extra: "anything")
         }
     `;
+    // @ts-ignore Checking for 3rd parties who don't use TypeScript
     const fn = () => prependPkgNameToFunctionDirectives(schema);
     expect(fn).toThrow(/expected 1 argument to @function/i);
 });
@@ -88,6 +103,7 @@ test('FunctionDirectiveVisitor attaches resolver to @function directive', () => 
             function: FunctionDirectiveVisitor,
         },
     });
+    // @ts-ignore
     const fields = executableSchema.getType('Query').getFields();
     expect(typeof fields.foo.resolve).toBe('function');
 });
