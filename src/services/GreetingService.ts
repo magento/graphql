@@ -1,29 +1,29 @@
 import { credentials } from 'grpc';
 import { assert } from '../assert';
 import { promisify } from 'util';
-import { EchoRequest } from '../../generated/echo_pb';
-import { EchoClient } from '../../generated/echo_grpc_pb';
+import { GreetingRequest } from '../../generated/greeting_pb';
+import { GreetingClient } from '../../generated/greeting_grpc_pb';
 
-type EchoServiceOpts = {
+type GreetingServiceOpts = {
     host: string;
     port: number;
 };
 
 /**
- * @summary Interacts with the Echo API in Magento Core
+ * @summary Interacts with the Greeting API in Magento Core
  */
-export class EchoService {
-    private client: EchoClient;
+export class GreetingService {
+    private client: GreetingClient;
 
-    constructor({ host, port }: EchoServiceOpts) {
+    constructor({ host, port }: GreetingServiceOpts) {
         const address = `${host}:${port}`;
         const insecureCredentialsFixThis = credentials.createInsecure();
-        this.client = new EchoClient(address, insecureCredentialsFixThis);
+        this.client = new GreetingClient(address, insecureCredentialsFixThis);
     }
 
     async greet(name: string) {
         const { client } = this;
-        const message = new EchoRequest();
+        const message = new GreetingRequest();
         message.setName(name);
 
         // TODO: Don't promisify on every invocation. Find more

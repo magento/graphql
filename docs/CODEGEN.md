@@ -14,23 +14,23 @@ We want to ensure, at compile time, that the values returned from resolvers matc
 
 ```js
 const typeDefs = gql`
-    input EchoRequest {
+    input GreetingRequest {
         value: String
     }
 
-    type EchoReply {
+    type GreetingReply {
         value: String
     }
 
     type Query {
-        echo(input: EchoRequest): EchoReply
+        greet(input: GreetingRequest): GreetingReply
     }
 `;
 
 const resolvers = {
     Query: {
         // Arguments are strictly typed
-        echo: (parent, args) => {
+        greet: (parent, args) => {
             // return value is strictlytyped
         },
     },
