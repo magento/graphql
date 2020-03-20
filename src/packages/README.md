@@ -50,7 +50,7 @@ export function setup(api: ExtensionAPI) {
 
 ## Working Example
 
-See [`src/packages/echo/`](/src/packages/echo/) for an example of a package that fetches data from a remote API.
+See [`src/packages/greeting/`](/src/packages/greeting/) for an example of a package that fetches data from a remote API.
 
 ## Caveats
 

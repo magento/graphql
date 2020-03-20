@@ -6,11 +6,11 @@ const configDef = {
         default: 4000,
     },
     ECHO_HOST: {
-        docs: 'Hostname or IP of echo gRPC service',
+        docs: 'Hostname or IP of greeting gRPC service',
         default: '0.0.0.0',
     },
     ECHO_PORT: {
-        docs: 'Port of echo gRPC service',
+        docs: 'Port of greeting gRPC service',
         default: 9001,
     },
     LEGACY_GRAPHQL_URL: {

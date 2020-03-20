@@ -2,7 +2,7 @@ import { IResolvers } from '../../../generated/graphql';
 import gql from 'graphql-tag';
 import { GraphQLContext } from '../../types';
 import { readVar } from '../../env';
-import { EchoService } from '../../services/EchoService';
+import { GreetingService } from '../../services/GreetingService';
 import { ExtensionAPI } from '../../localPackages';
 
 // Note: This is an example of a "local package" or an "in-process"
@@ -13,20 +13,20 @@ import { ExtensionAPI } from '../../localPackages';
 
 export function setup(api: ExtensionAPI) {
     const typeDefs = gql`
-        input EchoRequest {
+        input GreetingRequest {
             name: String!
         }
 
-        type EchoReply {
+        type GreetingReply {
             greeting: String
         }
 
         type Query {
-            echo(request: EchoRequest!): EchoReply
+            greet(request: GreetingRequest!): GreetingReply
         }
     `;
 
-    const echo = new EchoService({
+    const greeting = new GreetingService({
         host: readVar('ECHO_HOST').asString(),
         port: readVar('ECHO_PORT').asNumber(),
     });
@@ -38,8 +38,8 @@ export function setup(api: ExtensionAPI) {
     // to auto-gen types, similar to what we do in this application
     const resolvers: IResolvers<GraphQLContext> = {
         Query: {
-            echo: async (_parent, args) => {
-                const result = await echo.greet(args.request.name);
+            greet: async (_parent, args) => {
+                const result = await greeting.greet(args.request.name);
                 return { greeting: result };
             },
         },
