@@ -38,8 +38,6 @@ export class FunctionDirectiveVisitor extends SchemaDirectiveVisitor {
     args: { name: string } = this.args;
 
     visitFieldDefinition(field: GraphQLField<unknown, unknown>) {
-        // TODO: Break out resolver to a separate function/file
-        // for ease of testing its guts
         const resolver = (parent: unknown, args: unknown) => {
             const resolverData = {
                 parent,
