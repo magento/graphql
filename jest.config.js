@@ -5,4 +5,5 @@ module.exports = {
     // Reset mocks between each test
     restoreMocks: true,
     testPathIgnorePatterns: ['/node_modules|__fixtures__/'],
+    globalSetup: './scripts/test-setup.js',
 };

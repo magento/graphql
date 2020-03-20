@@ -1,6 +1,5 @@
 import { FetcherOperation } from 'graphql-tools/dist/stitching/makeRemoteExecutableSchema';
 import { print } from 'graphql';
-import fromentries from 'fromentries';
 import { GraphQLContext } from './types';
 
 /**
@@ -64,5 +63,5 @@ const excludeUndefinedValues = <K extends string, V>(obj: Record<K, V>) => {
             entries.push([key, val] as [K, V]);
         }
     }
-    return fromentries(entries);
+    return Object.fromEntries(entries);
 };
