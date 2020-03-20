@@ -4,6 +4,7 @@ import {
     DirectiveNode,
     StringValueNode,
     ArgumentNode,
+    GraphQLObjectType,
 } from 'graphql';
 import gql from 'graphql-tag';
 import { makeExecutableSchema } from 'graphql-tools';
@@ -11,6 +12,11 @@ import {
     prependPkgNameToFunctionDirectives,
     FunctionDirectiveVisitor,
 } from '../FunctionDirectiveVisitor';
+import { invokeRemoteResolver } from '../adobe-io';
+
+jest.mock('../adobe-io', () => ({
+    invokeRemoteResolver: jest.fn().mockResolvedValue({ foo: 'bar' }),
+}));
 
 type StringArgumentNode = ArgumentNode & { value: StringValueNode };
 
@@ -103,7 +109,35 @@ test('FunctionDirectiveVisitor attaches resolver to @function directive', () => 
             function: FunctionDirectiveVisitor,
         },
     });
-    // @ts-ignore
-    const fields = executableSchema.getType('Query').getFields();
-    expect(typeof fields.foo.resolve).toBe('function');
+    const queryField = executableSchema.getType('Query') as GraphQLObjectType;
+    expect(typeof queryField.getFields().foo.resolve).toBe('function');
+});
+
+test('Resolver set by FunctionDirectiveVisitor invokes I/O func with resolver info', async () => {
+    const schema = gql`
+        directive @function(name: String!) on FIELD_DEFINITION
+        type Query {
+            foo: String @function(name: "foo-func")
+        }
+    `;
+    const executableSchema = makeExecutableSchema({
+        typeDefs: schema,
+        schemaDirectives: {
+            function: FunctionDirectiveVisitor,
+        },
+    });
+    const queryField = executableSchema.getType('Query') as GraphQLObjectType;
+    // @ts-ignore skipping the unneeded resolve info field in test
+    await queryField.getFields().foo.resolve(null, {}, {}, {});
+    expect(invokeRemoteResolver).toHaveBeenCalledTimes(1);
+
+    expect(invokeRemoteResolver).toHaveBeenCalledWith(
+        expect.objectContaining({
+            action: 'foo-func',
+            resolverData: expect.objectContaining({
+                parent: expect.any(Object),
+                args: expect.any(Object),
+            }),
+        }),
+    );
 });
