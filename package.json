@@ -4,6 +4,10 @@
   "version": "0.0.1",
   "description": "Official Magento 2 GraphQL Server",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=12.14.1",
+    "npm": ">=6"
+  },
   "scripts": {
     "build": "npm run clean && node scripts/protogen.js && gql-gen && tsc",
     "start": "node dist/index.js",
@@ -17,7 +21,6 @@
   "dependencies": {
     "fastify": "^2.12.1",
     "fastify-gql": "^3.0.7",
-    "fromentries": "^1.2.0",
     "google-protobuf": "^3.11.2",
     "graphql": "^14.6.0",
     "graphql-tag": "^2.10.3",
