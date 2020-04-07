@@ -1,5 +1,5 @@
 import gql from 'graphql-tag';
-import { createMonolithFetcher } from '../monolith-fetcher';
+import { createMonolithApolloFetcher } from '../apollo-fetcher';
 import { Response } from 'node-fetch';
 
 const fetchJSONStub = (res: string) =>
@@ -13,7 +13,7 @@ const SAMPLE_QUERY = gql`
 
 test('fetcher sends requests to correct url', async () => {
     const fetchStub = fetchJSONStub('{}');
-    const fetcher = createMonolithFetcher(
+    const fetcher = createMonolithApolloFetcher(
         'https://www.foo.test/graphql',
         fetchStub,
     );
@@ -24,7 +24,7 @@ test('fetcher sends requests to correct url', async () => {
 
 test('fetcher passes monolith-specific headers from context', async () => {
     const fetchStub = fetchJSONStub('{}');
-    const fetcher = createMonolithFetcher(
+    const fetcher = createMonolithApolloFetcher(
         'https://www.foo.test/graphql',
         fetchStub,
     );
@@ -48,7 +48,7 @@ test('fetcher passes monolith-specific headers from context', async () => {
 
 test('fetcher skips monolith-specific headers when context not provided', async () => {
     const fetchStub = fetchJSONStub('{}');
-    const fetcher = createMonolithFetcher(
+    const fetcher = createMonolithApolloFetcher(
         'https://www.foo.test/graphql',
         fetchStub,
     );
@@ -64,7 +64,7 @@ test('fetcher skips monolith-specific headers when context not provided', async 
 
 test('fetcher excludes undefined and missing monolith-specific header values', async () => {
     const fetchStub = fetchJSONStub('{}');
-    const fetcher = createMonolithFetcher(
+    const fetcher = createMonolithApolloFetcher(
         'https://www.foo.test/graphql',
         fetchStub,
     );
