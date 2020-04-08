@@ -7,7 +7,7 @@ import {
 } from 'graphql-tools';
 import fastify, { FastifyRequest } from 'fastify';
 import fastifyGQL from 'fastify-gql';
-import { getAllPackages, mergePackageConfigs } from './localPackages';
+import { getAllPackages } from './localPackages';
 import { join } from 'path';
 import { readVar, hasVar } from './env';
 import {
@@ -15,10 +15,10 @@ import {
     prependPkgNameToFunctionDirectives,
 } from './FunctionDirectiveVisitor';
 import { getAllRemoteGQLSchemas } from './adobe-io';
-import { createMonolithFetcher } from './monolith-fetcher';
+import { createMonolithApolloFetcher } from './monointerop/apollo-fetcher';
 import fetch from 'node-fetch';
 import { assert } from './assert';
-import { GraphQLContext } from './types';
+import { contextBuilder } from './contextBuilder';
 
 export async function main() {
     const localExtensions = await collectLocalExtensions();
@@ -58,11 +58,11 @@ export async function main() {
         graphiql: 'playground',
         path: '/graphql',
         jit: 10,
-        context: (req: FastifyRequest): GraphQLContext => ({
-            legacyToken: req.headers.authorization,
-            currency: req.headers['Content-Currency'] as string | undefined,
-            store: req.headers.Store as string | undefined,
-        }),
+        context: (req: FastifyRequest) =>
+            contextBuilder({
+                extensions: localExtensions.extensions,
+                headers: req.headers,
+            }),
     });
 
     await fastifyServer.listen(readVar('PORT').asNumber());
@@ -83,20 +83,22 @@ export async function main() {
  */
 async function collectLocalExtensions() {
     const inProcessPkgsRoot = join(__dirname, 'packages');
-    const mergedLocalPkgConfigs = mergePackageConfigs(
-        await getAllPackages(inProcessPkgsRoot),
-    );
-    const count = mergedLocalPkgConfigs.names.length;
-    const names = mergedLocalPkgConfigs.names.map(n => `  - ${n}`).join('\n');
-    console.log(`Found ${count} local package(s):\n${names}`);
+    const packages = await getAllPackages(inProcessPkgsRoot);
+    const pkgNames = Object.keys(packages);
+    const names = pkgNames.join('\n  -');
+    console.log(`Found ${pkgNames.length} local package(s):\n  -${names}`);
 
-    const executableSchema = makeExecutableSchema({
-        typeDefs: mergedLocalPkgConfigs.typeDefs,
-        resolvers: mergedLocalPkgConfigs.resolvers,
-    });
+    const typeDefs = [];
+    const resolvers = [];
+    for (const pkg of Object.values(packages)) {
+        typeDefs.push(...pkg.typeDefs);
+        resolvers.push(pkg.resolvers);
+    }
+    const executableSchema = makeExecutableSchema({ typeDefs, resolvers });
 
     return {
         executableSchema,
+        extensions: packages,
     };
 }
 
@@ -140,7 +142,7 @@ async function prepareRemoteExtensionSchemas(packages: string[]) {
  *          delegate queries back to the monolith
  */
 async function prepareFallbackSchema(legacyURL: string) {
-    const fetcher = createMonolithFetcher(
+    const fetcher = createMonolithApolloFetcher(
         legacyURL,
         (fetch as unknown) as WindowOrWorkerGlobalScope['fetch'],
     );

@@ -16,6 +16,21 @@ const configDef = {
     LEGACY_GRAPHQL_URL: {
         docs: 'Absolute URL of Magento Core GraphQL endpoint',
     },
+    LEGACY_REST_HOSTNAME: {
+        docs: 'Hostname of Magento server exposing REST API',
+    },
+    LEGACY_REST_PORT: {
+        docs: 'Port of Magento server exposing REST API',
+        default: 443,
+    },
+    B2B_ADMIN_TOKEN: {
+        docs: 'Admin API Token to use for B2B REST API calls',
+    },
+    LEGACY_REST_PROTOCOL: {
+        docs:
+            'Protocol ("http:" or "https:") to use when calling Magento REST API',
+        default: 'https:',
+    },
     ADOBE_IO_HOST: {
         docs: 'Hostname or IP of Adobe I/O',
         default: 'adobeioruntime.net',

@@ -7,10 +7,10 @@
  */
 
 /**
- * @summary Asserts that a value is not undefined or null
+ * @summary Asserts that a value is truthy
  */
 export function assert(value: unknown, msg: string): asserts value {
-    if (value == undefined) {
+    if (!value) {
         throw new Error(msg);
     }
 }

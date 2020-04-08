@@ -1,34 +1,33 @@
 import { join } from 'path';
-import gql from 'graphql-tag';
-import { getAllPackages, mergePackageConfigs } from '../localPackages';
+import { getAllPackages } from '../localPackages';
 
 test('getAllPackages finds a single package', async () => {
     const packagesDir = join(__dirname, '__fixtures__', 'packages-case-1');
-    const [firstPkg] = await getAllPackages(packagesDir);
-    expect(firstPkg.name).toBe('foo-package');
+    const packages = await getAllPackages(packagesDir);
+    expect(Object.keys(packages)).toContain('foo-package');
 });
 
 test('getAllPackages finds > 1 package', async () => {
     const packagesDir = join(__dirname, '__fixtures__', 'packages-case-2');
     const packages = await getAllPackages(packagesDir);
-    expect(packages.length).toBe(2);
-    // Note: We can't depend on ordering yet as it's dependent on
-    // fs ordering at the moment, which isn't x-platform.
-    // See the note in src/packages/README.md for more information
-    expect(packages.find(p => p.name === 'foo-package')).toBeTruthy();
-    expect(packages.find(p => p.name === 'bar-package')).toBeTruthy();
+    const names = Object.keys(packages);
+    expect(names.length).toBe(2);
+    expect(names).toContain('foo-package');
+    expect(names).toContain('bar-package');
 });
 
-test('getAllPackages warns but does not fail when missing setup function', async () => {
+test('getAllPackages throws with descriptive error when missing setup function', async () => {
+    expect.assertions(1);
+
     const warnStub = jest.fn();
     jest.spyOn(console, 'warn').mockImplementation(warnStub);
     const packagesDir = join(__dirname, '__fixtures__', 'packages-case-3');
-    const packages = await getAllPackages(packagesDir);
 
-    expect(packages.length).toBe(0);
-    expect(warnStub).toHaveBeenCalledWith(
-        expect.stringContaining('Extension is missing setup()'),
-    );
+    try {
+        await getAllPackages(packagesDir);
+    } catch (err) {
+        expect(err.message).toContain('Extension is missing setup()');
+    }
 });
 
 test('getAllPackages ignores directories starting with . or _', async () => {
@@ -37,47 +36,8 @@ test('getAllPackages ignores directories starting with . or _', async () => {
     const packagesDir = join(__dirname, '__fixtures__', 'packages-case-4');
     const packages = await getAllPackages(packagesDir);
 
-    expect(packages.length).toBe(0);
+    expect(Object.keys(packages).length).toBe(0);
     expect(warnStub).not.toHaveBeenCalledWith(
         expect.stringContaining('Unexpected directory '),
     );
-});
-
-test('mergePackageConfigs merges 2 configs in order', () => {
-    const package1 = {
-        name: 'pkg1',
-        typeDefs: [
-            gql`
-                type Query {
-                    foo: String
-                }
-            `,
-        ],
-        resolvers: {
-            Query: {
-                foo: () => 'a string',
-            },
-        },
-    };
-
-    const package2 = {
-        name: 'pkg2',
-        typeDefs: [
-            gql`
-                type Query {
-                    bar: String
-                }
-            `,
-        ],
-        resolvers: {
-            Query: {
-                bar: () => 'a second string',
-            },
-        },
-    };
-
-    const merged = mergePackageConfigs([package1, package2]);
-    expect(merged.names).toEqual(['pkg1', 'pkg2']);
-    expect(merged.typeDefs).toHaveLength(2);
-    expect(merged.resolvers).toHaveLength(2);
 });

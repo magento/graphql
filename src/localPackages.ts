@@ -2,26 +2,30 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { IResolvers } from '../generated/graphql';
 import { DocumentNode } from 'graphql';
+import { ContextExtension } from './types';
 
 export type GQLPackage = {
     name: string;
     typeDefs: DocumentNode[];
     resolvers: IResolvers;
+    context?: ContextExtension;
 };
 
 export type ExtensionAPI = {
     addTypeDefs: (defs: DocumentNode | DocumentNode[]) => ExtensionAPI;
     addResolvers: (resolvers: IResolvers) => ExtensionAPI;
+    extendContext: (contextExtension: ContextExtension) => ExtensionAPI;
 };
 
-function invokeExtensionSetup(
+async function invokeExtensionSetup(
     name: string,
-    setupFunc: (api: ExtensionAPI) => void,
-): GQLPackage {
-    const registration = {
+    setupFunc: (api: ExtensionAPI) => Promise<void>,
+): Promise<GQLPackage> {
+    const registration: GQLPackage = {
         name,
-        typeDefs: [] as DocumentNode[],
-        resolvers: {} as IResolvers,
+        typeDefs: [],
+        resolvers: {},
+        context: undefined,
     };
 
     const extensionAPI: ExtensionAPI = {
@@ -35,9 +39,15 @@ function invokeExtensionSetup(
             Object.assign(registration.resolvers, resolvers);
             return extensionAPI;
         },
+        extendContext(onNewContext) {
+            // TODO: Maybe throw an error when an extension tries
+            // to extend context > 1 time
+            registration.context = onNewContext;
+            return extensionAPI;
+        },
     };
 
-    setupFunc(extensionAPI);
+    await setupFunc(extensionAPI);
     return registration;
 }
 
@@ -47,71 +57,53 @@ function invokeExtensionSetup(
  */
 export async function getAllPackages(
     packagesRoot: string,
-): Promise<GQLPackage[]> {
+): Promise<Record<string, GQLPackage>> {
     const subdirs = await fs.readdir(packagesRoot, { withFileTypes: true });
-    const pkgs = [];
+    const pkgs: Record<string, GQLPackage> = {};
 
     for (const dir of subdirs) {
         if (!dir.isDirectory() || reservedDirRegex.test(dir.name)) {
             continue;
         }
 
-        const pkgConfig = getPotentialPackage(packagesRoot, dir.name);
-        if (pkgConfig) pkgs.push(pkgConfig);
+        const pkgConfig = await getPotentialPackage(packagesRoot, dir.name);
+        if (pkgConfig) pkgs[pkgConfig.name] = pkgConfig;
     }
 
     return pkgs;
 }
 
-export function mergePackageConfigs(packages: GQLPackage[]) {
-    const names = [];
-    const typeDefs = [];
-    const resolvers = [];
-
-    for (const pkg of packages) {
-        names.push(pkg.name);
-        typeDefs.push(...pkg.typeDefs);
-        resolvers.push(pkg.resolvers);
-    }
-
-    return {
-        names,
-        typeDefs,
-        resolvers,
-    };
-}
-
 /**
  * @summary Attempt to read a Magento GraphQL package from
- *          a subdir of the packages root. Will not throw
- *          on unrecognized dirs, but will instead flush a
- *          warning to stderr
+ *          a subdir of the packagesRoot.
  */
-const getPotentialPackage = (
+const getPotentialPackage = async (
     packagesRoot: string,
     dir: string,
-): GQLPackage | undefined => {
+): Promise<GQLPackage> => {
     const indexPath = join(packagesRoot, dir);
     let pkg;
 
     try {
         pkg = require(indexPath);
     } catch (err) {
-        console.warn(
+        console.error(
             `Found extension directory "${indexPath}", but did not find extension within it.`,
         );
-        return;
+        throw err;
     }
 
     if (typeof pkg.setup !== 'function') {
-        console.warn(`Extension is missing setup() function: "${indexPath}"`);
-        return;
+        throw new Error(
+            `Extension is missing setup() function: "${indexPath}"`,
+        );
     }
 
     try {
-        return invokeExtensionSetup(dir, pkg.setup);
+        return await invokeExtensionSetup(dir, pkg.setup);
     } catch (err) {
-        console.warn(`Failed running setup() function: ${indexPath}`);
+        console.error(`Failed running setup() function: ${indexPath}`);
+        throw err;
     }
 };
 
