@@ -12,6 +12,6 @@
         "noEmitOnError": false,
         "resolveJsonModule": true
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "src/extensions/*/package.json"],
     "exclude": ["node_modules", "**/__tests__/**"]
 }

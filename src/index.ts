@@ -1,56 +1,43 @@
-import gql from 'graphql-tag';
-import {
-    introspectSchema,
-    makeRemoteExecutableSchema,
-    makeExecutableSchema,
-    mergeSchemas,
-} from 'graphql-tools';
+import { mergeSchemas } from 'graphql-tools';
 import fastify, { FastifyRequest } from 'fastify';
 import fastifyGQL from 'fastify-gql';
-import { getAllPackages } from './localPackages';
 import { join } from 'path';
-import { readVar, hasVar } from './env';
-import {
-    FunctionDirectiveVisitor,
-    prependPkgNameToFunctionDirectives,
-} from './FunctionDirectiveVisitor';
-import { getAllRemoteGQLSchemas } from './adobe-io';
-import { createMonolithApolloFetcher } from './monointerop/apollo-fetcher';
-import fetch from 'node-fetch';
+import { readVar, hasVar } from './framework/env';
 import { assert } from './assert';
-import { contextBuilder } from './contextBuilder';
+import { contextBuilder } from './framework/contextBuilder';
+import { collectLocalExtensions } from './framework/collectLocalExtensions';
+import { collectRemoteExtensions } from './framework/collectRemoteExtensions';
+
+// TODO: Break out execution of `main`
+// to bin/magentographql. Server can then be used
+// either programatically or via a binary that gets
+// npm installed globally
+main().catch(err => {
+    console.error(err);
+    process.exit(1);
+});
 
 export async function main() {
-    const localExtensions = await collectLocalExtensions();
-    const schemas = [
-        // schemas are last-in-wins
-        localExtensions.executableSchema,
-    ];
+    const localPackagesRoot = join(__dirname, 'extensions');
+    const localExtensions = await collectLocalExtensions([
+        // TODO: allow for customization of extension roots,
+        // and default to including built-ins + (cwd + node_modules)
+        localPackagesRoot,
+    ]);
+    const schemas = [...localExtensions.schemas, ...localExtensions.typeDefs];
     if (hasVar('IO_PACKAGES')) {
         const packages = readVar('IO_PACKAGES').asArray();
-        // remote extensions take precedence over local
-        // extensions, to ensure remote extensions can
-        // extend types when logic is moved from the monolith
-        // to this server
-        schemas.push(await prepareRemoteExtensionSchemas(packages));
-    }
-
-    if (hasVar('LEGACY_GRAPHQL_URL')) {
-        // Monolith schema gets highest precedence. It's
-        // intentional that you cannot override the monolith
-        // schema (if you need to extend the monolith schema, it
-        // should be done in the monolith)
-        schemas.push(
-            await prepareFallbackSchema(
-                readVar('LEGACY_GRAPHQL_URL').asString(),
-            ),
-        );
+        schemas.push(await collectRemoteExtensions(packages));
     }
 
     const fastifyServer = fastify();
     fastifyServer.register(fastifyGQL, {
         schema: mergeSchemas({
-            schemas,
+            // @ts-ignore Types are wrong. The lib's implementation
+            // already merges this array with `typeDefs`
+            // https://github.com/Urigo/graphql-tools/blob/03b70c3f3dc71bdb846aa02bdd645ab4b3a96a87/src/stitch/mergeSchemas.ts#L106-L108
+            subschemas: schemas,
+            resolvers: localExtensions.resolvers,
             // The mergeSchemas function, by default, loses built-in
             // directives (even though they're required by the spec).
             mergeDirectives: true,
@@ -71,101 +58,11 @@ export async function main() {
         netAddress && typeof netAddress === 'object',
         'Unexpected binding to pipe/socket',
     );
+    // TODO: Figure out if we plan to support TLS. Assumption atm
+    // is that the server will always sit behind something else
+    // where TLS terminates, making it unnecessary
     const address = `http://${netAddress.address}:${netAddress.port}`;
 
     console.log(`Server listening: ${address}`);
     console.log(`graphiql UI: ${address}/playground`);
 }
-
-/**
- * @summary Find all local (in-process) Magento GraphQL extensions,
- *          and merge all schemas and data sources
- */
-async function collectLocalExtensions() {
-    const inProcessPkgsRoot = join(__dirname, 'packages');
-    const packages = await getAllPackages(inProcessPkgsRoot);
-    const pkgNames = Object.keys(packages);
-    const names = pkgNames.join('\n  -');
-    console.log(`Found ${pkgNames.length} local package(s):\n  -${names}`);
-
-    const typeDefs = [];
-    const resolvers = [];
-    for (const pkg of Object.values(packages)) {
-        typeDefs.push(...pkg.typeDefs);
-        resolvers.push(pkg.resolvers);
-    }
-    const executableSchema = makeExecutableSchema({ typeDefs, resolvers });
-
-    return {
-        executableSchema,
-        extensions: packages,
-    };
-}
-
-async function prepareRemoteExtensionSchemas(packages: string[]) {
-    const ioSchemaDefs = await getAllRemoteGQLSchemas(packages);
-    const pkgNames = ioSchemaDefs.map(s => `  - ${s.pkg}`).join('\n');
-    console.log(
-        `Found ${ioSchemaDefs.length} remote I/O GraphQL package(s):\n${pkgNames}`,
-    );
-    ioSchemaDefs.forEach(({ schemaDef, pkg }) => {
-        prependPkgNameToFunctionDirectives(schemaDef, pkg);
-    });
-    const ioSchema = makeExecutableSchema({
-        typeDefs: [
-            gql`
-                type Query {
-                    # The "ignoreMe" query is a temporary hack
-                    # to give remote packages a "Query" root type to extend
-                    ignoreMe: String
-                }
-                directive @function(name: String!) on FIELD_DEFINITION
-            `,
-            // all remote schemas merged in _after_ we've defined
-            // both the @function directive and the root "Query" type
-            ...ioSchemaDefs.map(io => io.schemaDef),
-        ],
-    });
-    // Decorate @function directives with the proper Adobe I/O
-    // package name
-    // TODO: @function directive should not be visible in the public schema
-    FunctionDirectiveVisitor.visitSchemaDirectives(ioSchema, {
-        function: FunctionDirectiveVisitor,
-    });
-
-    return ioSchema;
-}
-
-/**
- * @summary Fetch the remote schema from the Magento monolith,
- *          and create an executable schema with resolvers that
- *          delegate queries back to the monolith
- */
-async function prepareFallbackSchema(legacyURL: string) {
-    const fetcher = createMonolithApolloFetcher(
-        legacyURL,
-        (fetch as unknown) as WindowOrWorkerGlobalScope['fetch'],
-    );
-
-    let rawMonolithSchema;
-
-    try {
-        rawMonolithSchema = await introspectSchema(fetcher);
-    } catch (err) {
-        throw new Error(
-            `Failed introspecting remote Magento schema at "${legacyURL}". ` +
-                'Make sure that the LEGACY_GRAPHQL_URL variable has the ' +
-                'correct value for your Magento instance',
-        );
-    }
-
-    return makeRemoteExecutableSchema({
-        schema: rawMonolithSchema,
-        fetcher,
-    });
-}
-
-main().catch(err => {
-    console.error(err);
-    process.exit(1);
-});
