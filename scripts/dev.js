@@ -101,11 +101,15 @@ const generateGRPCFixtures = async () => {
 const generateResolverTypes = async () => {
     console.log(chalk`{yellow gql-gen}: Running GraphQL Code Generation`);
     try {
-        await execa('gql-gen');
+        await execa('gql-gen', { preferLocal: true });
         console.log(chalk`{yellow gql-gen}: GraphQL Code Generation completed`);
     } catch (err) {
+        const debugLog = err.stdout
+            .split('\n')
+            .map(v => `  ${v}`)
+            .join('\n');
         console.error(
-            chalk`{red gql-gen}: GraphQL Code Generation failed: ${err}`,
+            chalk`{red gql-gen}: GraphQL Code Generation failed:\n${debugLog}`,
         );
     }
 };
