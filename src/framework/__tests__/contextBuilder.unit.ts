@@ -16,11 +16,8 @@ test('Namespaces extensions to context', () => {
             context: () => ({ testProp: true }),
         },
     ];
-    const context = contextBuilder({
-        extensions,
-        headers: {},
-    });
-
+    const buildContext = contextBuilder({ extensions });
+    const context = buildContext({});
     expect(context).toHaveProperty('@vendor/magento-graphql-foo');
 });
 
@@ -35,22 +32,21 @@ test('Does not persist mutations of context obj passed to extension', () => {
             },
         },
     ];
-    const context = contextBuilder({
+    const buildContext = contextBuilder({
         extensions,
-        headers: {},
     });
-
+    const context = buildContext({});
     expect(context).not.toHaveProperty('shouldNotStay');
 });
 
 test('Maps Magento core specific headers to top-level of context', () => {
-    const context = contextBuilder({
+    const buildContext = contextBuilder({
         extensions: [],
-        headers: {
-            authorization: 'Bearer abcdefg',
-            'Content-Currency': 'USD',
-            Store: 'storeview',
-        },
+    });
+    const context = buildContext({
+        authorization: 'Bearer abcdefg',
+        'Content-Currency': 'USD',
+        Store: 'storeview',
     });
     expect(context.legacyToken).toBe('Bearer abcdefg');
     expect(context.currency).toBe('USD');
@@ -79,5 +75,5 @@ test("an extension cannot see another extensions' context properties", () => {
         },
     ];
 
-    contextBuilder({ extensions, headers: {} });
+    contextBuilder({ extensions })({});
 });

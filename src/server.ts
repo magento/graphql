@@ -1,56 +1,25 @@
-import { mergeSchemas } from 'graphql-tools';
 import fastify, { FastifyRequest } from 'fastify';
 import fastifyGQL from 'fastify-gql';
-import { join } from 'path';
-import { readVar, hasVar } from './framework/env';
+import { readVar } from './framework/env';
 import { assert } from './assert';
-import { contextBuilder } from './framework/contextBuilder';
 import {
-    collectLocalExtensions,
-    ExtensionPathResolverResult,
-} from './framework/collectLocalExtensions';
-import { collectRemoteExtensions } from './framework/collectRemoteExtensions';
+    prepareForServer,
+    MagentoGraphQLOpts,
+} from './framework/prepareForServer';
 
 type MagentoGraphQLServerOpts = {
-    /** Allow customizing how local extensions are found */
-    localExtensionPathResolver?: (
-        extensionRoots: string[],
-    ) => Promise<ExtensionPathResolverResult[]>;
+    localExtensionPathResolver?: MagentoGraphQLOpts['localExtensionPathResolver'];
 };
 
-export default async function() {
-    const localPackagesRoot = join(__dirname, 'extensions');
-    const localExtensions = await collectLocalExtensions([
-        // TODO: allow for customization of extension roots,
-        // and default to including built-ins + (cwd + node_modules)
-        localPackagesRoot,
-    ]);
-    const schemas = [...localExtensions.schemas, ...localExtensions.typeDefs];
-    if (hasVar('IO_PACKAGES')) {
-        const packages = readVar('IO_PACKAGES').asArray();
-        schemas.push(await collectRemoteExtensions(packages));
-    }
-
+export default async function(opts: MagentoGraphQLServerOpts) {
+    const { schema, context } = await prepareForServer(opts);
     const fastifyServer = fastify();
     fastifyServer.register(fastifyGQL, {
-        schema: mergeSchemas({
-            // @ts-ignore Types are wrong. The lib's implementation
-            // already merges this array with `typeDefs`
-            // https://github.com/Urigo/graphql-tools/blob/03b70c3f3dc71bdb846aa02bdd645ab4b3a96a87/src/stitch/mergeSchemas.ts#L106-L108
-            subschemas: schemas,
-            resolvers: localExtensions.resolvers,
-            // The mergeSchemas function, by default, loses built-in
-            // directives (even though they're required by the spec).
-            mergeDirectives: true,
-        }),
+        schema,
         graphiql: 'playground',
         path: '/graphql',
         jit: 10,
-        context: (req: FastifyRequest) =>
-            contextBuilder({
-                extensions: localExtensions.extensions,
-                headers: req.headers,
-            }),
+        context: (req: FastifyRequest) => context({ headers: req.headers }),
     });
 
     await fastifyServer.listen(readVar('PORT').asNumber());
@@ -59,9 +28,9 @@ export default async function() {
         netAddress && typeof netAddress === 'object',
         'Unexpected binding to pipe/socket',
     );
-    // TODO: Figure out if we plan to support TLS. Assumption atm
-    // is that the server will always sit behind something else
-    // where TLS terminates, making it unnecessary
+    // No TLS support for now. Assumption is that the server
+    // will always sit behind something else where TLS terminates,
+    // making it unnecessary
     const address = `http://${netAddress.address}:${netAddress.port}`;
 
     console.log(`Server listening: ${address}`);
