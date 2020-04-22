@@ -23,6 +23,44 @@ export type LocalGQLExtension = {
     deps: string[];
 };
 
+export type ExtensionPathResolverResult = {
+    path: string;
+    packageJSON: PackageJSON;
+};
+
+/**
+ * @summary Given a collection of root directories to search in,
+ *          will discover all directories 1 level deep that are
+ *          local Magento GraphQL Extension packages
+ */
+async function localExtensionPathResolver(
+    extensionRoots: string[],
+): Promise<ExtensionPathResolverResult[]> {
+    const resultsFromRoot = async (root: string) => {
+        const subdirs = await fs.readdir(root);
+        const potentialExtensions = await Promise.all(
+            subdirs.map(dir => readPotentialPackage(join(root, dir))),
+        );
+
+        const extensions: ExtensionPathResolverResult[] = [];
+        for (const dir of potentialExtensions) {
+            if (dir) extensions.push(dir);
+        }
+
+        return extensions;
+    };
+
+    const readPotentialPackage = async (path: string) => {
+        const packageJSON = await safelyReadPackageJSON(path);
+        if (packageJSON && isGQLExtension(packageJSON.name)) {
+            return { path, packageJSON };
+        }
+    };
+
+    const rootReads = await Promise.all(extensionRoots.map(resultsFromRoot));
+    return rootReads.flat();
+}
+
 /**
  * @summary Aggregate and sort all local GraphQL extensions from
  *          any given number of directories.
@@ -30,11 +68,14 @@ export type LocalGQLExtension = {
  * @todo    Make scoped npm packages (@vendor/foo) work from
  *          node_modules dir (requires extra readdirs)
  */
-export async function collectLocalExtensions(extensionRoots: string[]) {
-    const pendingExtensions = Promise.all(
-        extensionRoots.map(getExtensionsFromRoot),
+export async function collectLocalExtensions(
+    extensionRoots: string[],
+    pathResolver = localExtensionPathResolver,
+) {
+    const extensionLocations = await pathResolver(extensionRoots);
+    const unsortedExtensions = await Promise.all(
+        extensionLocations.map(prepareExtension),
     );
-    const unsortedExtensions = (await pendingExtensions).flat();
     const extensions = sortExtensions(unsortedExtensions);
 
     const extNames = [];
@@ -109,33 +150,6 @@ async function invokeExtensionSetup(
 
     await setupFunc(extensionAPI);
     return setupConfig;
-}
-
-async function getExtensionsFromRoot(
-    extensionsRoot: string,
-): Promise<LocalGQLExtension[]> {
-    const subdirs = await fs.readdir(extensionsRoot);
-    const extensions: LocalGQLExtension[] = [];
-
-    for (const dir of subdirs) {
-        const path = join(extensionsRoot, dir);
-        // Note: We're purposely hitting disk serially in this
-        // loop as a simple means to avoid going over the file
-        // descriptor limit on various platforms. If this impacts
-        // startup performance we can optimize in the future
-        const packageJSON = await safelyReadPackageJSON(path);
-        if (!packageJSON || !isGQLExtension(packageJSON.name)) {
-            continue;
-        }
-
-        const extension = await prepareExtension({
-            packageJSON,
-            path,
-        });
-        extensions.push(extension);
-    }
-
-    return extensions;
 }
 
 /**

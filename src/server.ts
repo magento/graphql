@@ -5,19 +5,20 @@ import { join } from 'path';
 import { readVar, hasVar } from './framework/env';
 import { assert } from './assert';
 import { contextBuilder } from './framework/contextBuilder';
-import { collectLocalExtensions } from './framework/collectLocalExtensions';
+import {
+    collectLocalExtensions,
+    ExtensionPathResolverResult,
+} from './framework/collectLocalExtensions';
 import { collectRemoteExtensions } from './framework/collectRemoteExtensions';
 
-// TODO: Break out execution of `main`
-// to bin/magentographql. Server can then be used
-// either programatically or via a binary that gets
-// npm installed globally
-main().catch(err => {
-    console.error(err);
-    process.exit(1);
-});
+type MagentoGraphQLServerOpts = {
+    /** Allow customizing how local extensions are found */
+    localExtensionPathResolver?: (
+        extensionRoots: string[],
+    ) => Promise<ExtensionPathResolverResult[]>;
+};
 
-export async function main() {
+export default async function() {
     const localPackagesRoot = join(__dirname, 'extensions');
     const localExtensions = await collectLocalExtensions([
         // TODO: allow for customization of extension roots,
