@@ -61,16 +61,16 @@ test("an extension cannot see another extensions' context properties", () => {
             ...extDefaults(),
             name: '@vendor/magento-graphql-foo',
             context: (ctx: any) => {
-                expect(ctx).not.toHaveProperty('bar');
-                return {};
+                expect(ctx).not.toHaveProperty('@vendor/magento-graphql-foo');
+                return { some: 'value' };
             },
         },
         {
             ...extDefaults(),
             name: '@vendor/magento-graphql-foo',
             context: (ctx: any) => {
-                expect(ctx).not.toHaveProperty('foo');
-                return {};
+                expect(ctx).not.toHaveProperty('@vendor/magento-graphql-foo');
+                return { some: 'value' };
             },
         },
     ];
