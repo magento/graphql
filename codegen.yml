@@ -9,4 +9,5 @@ generates:
             - 'typescript'
             - 'typescript-resolvers'
         config:
-            useIndexSignature: true
+            scalars:
+                ID: 'string | number'

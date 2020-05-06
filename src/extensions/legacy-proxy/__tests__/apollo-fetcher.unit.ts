@@ -40,7 +40,7 @@ test('fetcher passes monolith-specific headers from context', async () => {
     });
     const [, fetchOpts] = fetchStub.mock.calls[0];
     expect(fetchOpts.headers).toMatchObject({
-        Authorization: 'token123',
+        Authorization: 'Bearer token123',
         'Content-Currency': 'USD',
         Store: '1',
     });

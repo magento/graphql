@@ -91,7 +91,7 @@ export async function collectLocalExtensions(
     }
 
     const names = extNames.join('\n  ');
-    console.log(`Found ${extNames.length} local package(s):\n  ${names}`);
+    console.log(`Using ${extNames.length} local extensions(s):\n  ${names}`);
 
     return {
         typeDefs,

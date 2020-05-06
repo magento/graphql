@@ -11,7 +11,9 @@ type ContextBuilderInput = {
  */
 export function contextBuilder({ extensions }: ContextBuilderInput) {
     return (headers: Record<string, unknown>): GraphQLContext => {
-        const legacyToken = headers.authorization as string | undefined;
+        const legacyToken = tokenFromAuthHeader(
+            headers.authorization as string,
+        );
         const currency = headers['Content-Currency'] as string | undefined;
         const store = headers.Store as string | undefined;
 
@@ -38,4 +40,15 @@ export function contextBuilder({ extensions }: ContextBuilderInput) {
 
         return finalContext;
     };
+}
+
+function tokenFromAuthHeader(authHeader: string | undefined) {
+    if (typeof authHeader !== 'string') {
+        return;
+    }
+
+    const matches = authHeader.match(/Bearer\s+(.+)/);
+    if (matches && matches[1]) {
+        return matches[1];
+    }
 }

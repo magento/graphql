@@ -15,13 +15,19 @@ export type MagentoGraphQLOpts = {
     ) => Promise<ExtensionPathResolverResult[]>;
 };
 
-export async function prepareForServer(opts: MagentoGraphQLOpts) {
+/**
+ * @summary Creates a new executable GraphQL schema and context
+ *          function that can be used with any node HTTP library
+ */
+export async function prepareForServer(opts: MagentoGraphQLOpts = {}) {
     const builtInExtensionsRoot = join(__dirname, '../extensions');
-    const localExtensions = await collectLocalExtensions([
-        // TODO: allow for customization of extension roots,
-        // and default to including built-ins + (cwd + node_modules)
-        builtInExtensionsRoot,
-    ]);
+    const localExtensions = await collectLocalExtensions(
+        [
+            // TODO: node_modules + builtins by default
+            builtInExtensionsRoot,
+        ],
+        opts.localExtensionPathResolver,
+    );
     const schemas = [...localExtensions.schemas, ...localExtensions.typeDefs];
     if (hasVar('IO_PACKAGES')) {
         const packages = readVar('IO_PACKAGES').asArray();
@@ -33,6 +39,9 @@ export async function prepareForServer(opts: MagentoGraphQLOpts) {
         // already merges this array with `typeDefs`
         // https://github.com/Urigo/graphql-tools/blob/03b70c3f3dc71bdb846aa02bdd645ab4b3a96a87/src/stitch/mergeSchemas.ts#L106-L108
         subschemas: schemas,
+        // @ts-ignore The `IResolvers` type that graphql-tools
+        // uses has a string:any index signature that would widen
+        // types, so we're ignoring it
         resolvers: localExtensions.resolvers,
         mergeDirectives: true,
     });

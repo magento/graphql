@@ -25,7 +25,7 @@ export function createMonolithApolloFetcher(
             Object.assign(
                 headers,
                 filterUndefinedEntries({
-                    Authorization: context.legacyToken,
+                    Authorization: `Bearer ${context.legacyToken}`,
                     'Content-Currency': context.currency,
                     Store: context.store,
                 }),

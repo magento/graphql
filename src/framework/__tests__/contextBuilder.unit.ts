@@ -48,7 +48,7 @@ test('Maps Magento core specific headers to top-level of context', () => {
         'Content-Currency': 'USD',
         Store: 'storeview',
     });
-    expect(context.legacyToken).toBe('Bearer abcdefg');
+    expect(context.legacyToken).toBe('abcdefg');
     expect(context.currency).toBe('USD');
     expect(context.store).toBe('storeview');
 });
