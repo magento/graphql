@@ -19,7 +19,7 @@ export default async function(opts: MagentoGraphQLServerOpts) {
         graphiql: 'playground',
         path: '/graphql',
         jit: 10,
-        context: (req: FastifyRequest) => context({ headers: req.headers }),
+        context: (req: FastifyRequest) => context(req.headers),
     });
 
     await fastifyServer.listen(readVar('PORT').asNumber());

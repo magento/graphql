@@ -1,7 +1,6 @@
 import { IFetcherOperation } from 'graphql-tools';
 import { print } from 'graphql';
 import { GraphQLContext } from '../../types';
-import { filterUndefinedEntries } from '../../framework/object-utils';
 import { default as nodeFetch } from 'node-fetch';
 
 /**
@@ -25,7 +24,7 @@ export function createMonolithApolloFetcher(
             Object.assign(
                 headers,
                 filterUndefinedEntries({
-                    Authorization: context.legacyToken,
+                    Authorization: `Bearer ${context.legacyToken}`,
                     'Content-Currency': context.currency,
                     Store: context.store,
                 }),
@@ -45,3 +44,13 @@ export function createMonolithApolloFetcher(
         return result.json();
     };
 }
+
+/**
+ * @summary Create a new object based on an existing one,
+ *          excluding entries with an undefined value
+ */
+const filterUndefinedEntries = <K extends string, V>(obj: Record<K, V>) => {
+    return Object.fromEntries(
+        Object.entries(obj).filter(o => o[1] !== undefined),
+    );
+};

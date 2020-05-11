@@ -48,7 +48,7 @@ test('Maps Magento core specific headers to top-level of context', () => {
         'Content-Currency': 'USD',
         Store: 'storeview',
     });
-    expect(context.legacyToken).toBe('Bearer abcdefg');
+    expect(context.legacyToken).toBe('abcdefg');
     expect(context.currency).toBe('USD');
     expect(context.store).toBe('storeview');
 });
@@ -61,16 +61,16 @@ test("an extension cannot see another extensions' context properties", () => {
             ...extDefaults(),
             name: '@vendor/magento-graphql-foo',
             context: (ctx: any) => {
-                expect(ctx).not.toHaveProperty('bar');
-                return {};
+                expect(ctx).not.toHaveProperty('@vendor/magento-graphql-foo');
+                return { some: 'value' };
             },
         },
         {
             ...extDefaults(),
             name: '@vendor/magento-graphql-foo',
             context: (ctx: any) => {
-                expect(ctx).not.toHaveProperty('foo');
-                return {};
+                expect(ctx).not.toHaveProperty('@vendor/magento-graphql-foo');
+                return { some: 'value' };
             },
         },
     ];

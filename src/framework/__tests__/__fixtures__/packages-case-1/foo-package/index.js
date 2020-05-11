@@ -1,17 +1,16 @@
 const gql = require('graphql-tag');
+const { createExtension } = require('../../../../../api');
 
-module.exports = {
-    setup(api) {
-        api.addTypeDefs(gql`
-            type Query {
-                hello: String
-            }
-        `);
+module.exports = createExtension({}, (config, api) => {
+    api.addTypeDefs(gql`
+        type Query {
+            hello: String
+        }
+    `);
 
-        api.addResolvers({
-            Query: {
-                hello: () => 'a string',
-            },
-        });
-    },
-};
+    api.addResolvers({
+        Query: {
+            hello: () => 'a string',
+        },
+    });
+});
