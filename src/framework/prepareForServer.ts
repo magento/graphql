@@ -6,7 +6,7 @@ import { collectRemoteExtensions } from './collectRemoteExtensions';
 import {
     collectLocalExtensions,
     ExtensionPathResolverResult,
-} from './collectLocalExtensions';
+} from './localExtensions';
 
 export type MagentoGraphQLOpts = {
     /** Allow customizing how local extensions are found */
@@ -21,11 +21,10 @@ export type MagentoGraphQLOpts = {
  */
 export async function prepareForServer(opts: MagentoGraphQLOpts = {}) {
     const builtInExtensionsRoot = join(__dirname, '../extensions');
+    // TODO: Support more than just our built-in modules
+    const extensionRoots = [builtInExtensionsRoot];
     const localExtensions = await collectLocalExtensions(
-        [
-            // TODO: node_modules + builtins by default
-            builtInExtensionsRoot,
-        ],
+        extensionRoots,
         opts.localExtensionPathResolver,
     );
     const schemas = [...localExtensions.schemas, ...localExtensions.typeDefs];

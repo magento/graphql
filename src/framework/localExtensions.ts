@@ -2,8 +2,41 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { IResolvers } from '../../generated/graphql';
 import { DocumentNode, GraphQLSchema } from 'graphql';
-import { ContextExtension, ExtensionAPI } from '../types';
+import { ContextExtension } from '../types';
 import { Sorter } from '@hapi/topo';
+import { createEnvConfigReader, ConfigReader, ConfigDefs } from './config';
+
+export const EXTENSION_MARKER = Symbol('magento-graphql-extension');
+
+type ExtensionRegistration<TConfigNames extends string> = Readonly<{
+    config: ConfigDefs<TConfigNames>;
+    setupFn: (
+        configReader: ConfigReader<TConfigNames>,
+        api: ExtensionAPI,
+    ) => void | Promise<void>;
+}>;
+
+type ExtensionRegistrationWrapper<TConfigNames extends string> = Readonly<{
+    [EXTENSION_MARKER]: ExtensionRegistration<TConfigNames>;
+}>;
+
+/**
+ * @summary Create the registration for a Magento GraphQL Extension
+ */
+export function createExtension<TConfigNames extends string>(
+    config: ConfigDefs<TConfigNames>,
+    setupFn: (
+        configReader: ConfigReader<TConfigNames>,
+        api: ExtensionAPI,
+    ) => void | Promise<void>,
+): ExtensionRegistrationWrapper<TConfigNames> {
+    return {
+        [EXTENSION_MARKER]: {
+            config,
+            setupFn,
+        },
+    };
+}
 
 const extensionNameConvention = /(@[\w-]+\/)*magento-graphql-.+/;
 const isGQLExtension = (name: string) => extensionNameConvention.test(name);
@@ -62,6 +95,20 @@ async function localExtensionPathResolver(
 }
 
 /**
+ * @summary Read and parse a package.json if it exists
+ *          in the provided directory.
+ */
+async function safelyReadPackageJSON(dir: string) {
+    const path = join(dir, 'package.json');
+    try {
+        const raw = await fs.readFile(path, 'utf8');
+        return JSON.parse(raw) as PackageJSON;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * @summary Aggregate and sort all local GraphQL extensions from
  *          any given number of directories.
  *
@@ -117,8 +164,15 @@ function sortExtensions(extensions: LocalGQLExtension[]) {
     return sorter.nodes;
 }
 
-async function invokeExtensionSetup(
-    setupFunc: (api: ExtensionAPI) => Promise<void>,
+type ExtensionAPI = Readonly<{
+    addTypeDefs: (defs: DocumentNode) => ExtensionAPI;
+    addResolvers: (resolvers: IResolvers) => ExtensionAPI;
+    addSchema: (schema: GraphQLSchema) => ExtensionAPI;
+    extendContext: (contextExtension: ContextExtension) => ExtensionAPI;
+}>;
+
+async function invokeExtensionSetup<TConfigNames extends string>(
+    registration: ExtensionRegistration<TConfigNames>,
 ) {
     const setupConfig = {
         typeDefs: [] as DocumentNode[],
@@ -148,22 +202,10 @@ async function invokeExtensionSetup(
         },
     };
 
-    await setupFunc(extensionAPI);
+    const { config, setupFn } = registration;
+    const configReader = createEnvConfigReader(config);
+    await setupFn(configReader, extensionAPI);
     return setupConfig;
-}
-
-/**
- * @summary Read and parse a package.json if it exists
- *          in the provided directory.
- */
-async function safelyReadPackageJSON(dir: string) {
-    const path = join(dir, 'package.json');
-    try {
-        const raw = await fs.readFile(path, 'utf8');
-        return JSON.parse(raw) as PackageJSON;
-    } catch {
-        return null;
-    }
 }
 
 const prepareExtension = async (opts: {
@@ -184,17 +226,42 @@ const prepareExtension = async (opts: {
         throw err;
     }
 
-    if (typeof pkg.setup !== 'function') {
+    const defaultExport = pkg.__esModule ? pkg.default : pkg;
+
+    if (!defaultExport) {
         throw new Error(
-            `Extension "${packageJSON.name}" is missing setup() function: "${entryPoint}"`,
+            `An extension did not export any configuration:\n` +
+                `  Extension: ${packageJSON.name}\n` +
+                `  Entry Point: ${entryPoint}`,
         );
     }
 
+    const isWrappedExtension = Object.prototype.hasOwnProperty.call(
+        defaultExport,
+        EXTENSION_MARKER,
+    );
+
+    if (!isWrappedExtension) {
+        throw new Error(
+            `An extension exported an invalid configuration:\n` +
+                `  Extension: ${packageJSON.name}\n` +
+                `  Entry Path: ${entryPoint}`,
+        );
+    }
+
+    const wrappedRegistration: ExtensionRegistrationWrapper<string> = defaultExport;
+    const registration = wrappedRegistration[EXTENSION_MARKER];
     let setupConfig;
+
     try {
-        setupConfig = await invokeExtensionSetup(pkg.setup);
+        setupConfig = await invokeExtensionSetup(registration);
     } catch (err) {
-        console.error(`Failed running setup() function: "${entryPoint}"`);
+        // add some context before re-throwing extension's error
+        console.error(
+            `Failed running extension setup function:\n` +
+                `  Extension: ${packageJSON.name}\n` +
+                `  Entry Path: ${entryPoint}`,
+        );
         throw err;
     }
 

@@ -1,5 +1,5 @@
 import { GraphQLContext } from '../types';
-import { LocalGQLExtension } from './collectLocalExtensions';
+import { LocalGQLExtension } from './localExtensions';
 
 type ContextBuilderInput = {
     extensions: LocalGQLExtension[];
@@ -17,20 +17,15 @@ export function contextBuilder({ extensions }: ContextBuilderInput) {
         const currency = headers['Content-Currency'] as string | undefined;
         const store = headers.Store as string | undefined;
 
-        // TODO: In dev mode, use Object.seal to prevent
-        // mutations to baseContext
         const baseContext = { legacyToken, currency, store };
-        // We don't want an extension setup func to rely
-        // on context values from other extension setup funcs,
-        // because it would create an implicit dependency on extension
-        // execution order, which is currently random.
+        // Copy `baseContext` before handing it out to extension `context`
+        // functions to ensure any accidental mutations aren't seen by
+        // other extensions
         const finalContext = { ...baseContext };
         for (const extension of extensions) {
             if (!extension.context) continue;
 
             const contextResult = {
-                // TODO: now that we switched to package.json names for
-                // extensions, the keys in this object are gonna suck
                 [extension.name]: extension.context(baseContext),
             };
             // additions to context are merged in with a namespace

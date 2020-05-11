@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { collectLocalExtensions } from '../collectLocalExtensions';
+import { collectLocalExtensions } from '../localExtensions';
 
 test('collectLocalExtensions finds a single package in a single root', async () => {
     const packagesDir = join(__dirname, '__fixtures__', 'packages-case-1');
@@ -27,6 +27,8 @@ test('collectLocalExtensions throws with descriptive error when missing setup fu
     try {
         await collectLocalExtensions([packagesDir]);
     } catch (err) {
-        expect(err.message).toMatch(/Extension ".+" is missing setup()/);
+        expect(err.message).toMatch(
+            /An extension exported an invalid configuration/,
+        );
     }
 });

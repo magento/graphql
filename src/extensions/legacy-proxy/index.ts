@@ -1,7 +1,12 @@
-import { readVar } from '../../framework/env';
 import { createMonolithApolloFetcher } from './apollo-fetcher';
-import { ExtensionAPI } from '../../types';
 import { introspectSchema, makeRemoteExecutableSchema } from 'graphql-tools';
+import { createExtension } from '../../api';
+
+const extensionConfig = {
+    LEGACY_GRAPHQL_URL: {
+        docs: 'Absolute URL of Magento Core GraphQL endpoint',
+    },
+};
 
 /**
  * @summary Magento GraphQL Extension to proxy
@@ -27,8 +32,8 @@ import { introspectSchema, makeRemoteExecutableSchema } from 'graphql-tools';
  *          We can and should revisit this decision if stitching
  *          becomes hard to maintain.
  */
-export async function setup(api: ExtensionAPI) {
-    const legacyURL = readVar('LEGACY_GRAPHQL_URL').asString();
+export default createExtension(extensionConfig, async (config, api) => {
+    const legacyURL = config.get('LEGACY_GRAPHQL_URL').asString();
     const fetcher = createMonolithApolloFetcher(legacyURL);
     let legacySchema;
     try {
@@ -47,4 +52,4 @@ export async function setup(api: ExtensionAPI) {
             fetcher,
         }),
     );
-}
+});

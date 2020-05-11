@@ -1,10 +1,8 @@
 import { IResolvers } from '../../../generated/graphql';
 import { B2BAPIClient } from './B2BAPIClient';
-import { GraphQLContext } from '../../types';
-import { readVar } from '../../framework/env';
-import { ExtensionAPI } from '../../types';
 import { typeDefs } from './typeDefs';
 import * as r from './restToGQLType';
+import { createExtension, GraphQLContext } from '../../api';
 
 // Would be nice to just import this, but
 // we want to use it both as a value and as a
@@ -19,15 +17,30 @@ type Context = GraphQLContext<{
     };
 }>;
 
-export async function setup(api: ExtensionAPI) {
-    // Eagerly read config when extension is first starting
-    // up. If config is missing we want errors on startup,
-    // not when queries start executing
+const extensionConfig = {
+    B2B_ADMIN_TOKEN: {
+        docs: 'Admin API Token to use for B2B REST API calls',
+    },
+    LEGACY_REST_HOSTNAME: {
+        docs: 'Hostname of Magento server exposing REST API',
+    },
+    LEGACY_REST_PORT: {
+        docs: 'Port of Magento server exposing REST API',
+        default: 443,
+    },
+    LEGACY_REST_PROTOCOL: {
+        docs:
+            'Protocol ("http:" or "https:") to use when calling Magento REST API',
+        default: 'https:',
+    },
+};
+
+export default createExtension(extensionConfig, (config, api) => {
     const apiOpts = {
-        adminToken: readVar('B2B_ADMIN_TOKEN').asString(),
-        hostname: readVar('LEGACY_REST_HOSTNAME').asString(),
-        port: readVar('LEGACY_REST_PORT').asNumber(),
-        protocol: readVar('LEGACY_REST_PROTOCOL').asString() as
+        adminToken: config.get('B2B_ADMIN_TOKEN').asString(),
+        hostname: config.get('LEGACY_REST_HOSTNAME').asString(),
+        port: config.get('LEGACY_REST_PORT').asNumber(),
+        protocol: config.get('LEGACY_REST_PROTOCOL').asString() as
             | 'http:'
             | 'https:',
     };
@@ -79,4 +92,4 @@ export async function setup(api: ExtensionAPI) {
     };
 
     api.addTypeDefs(typeDefs).addResolvers(resolvers);
-}
+});

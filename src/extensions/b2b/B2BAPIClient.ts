@@ -1,4 +1,4 @@
-import { assert } from '../../assert';
+import assert from 'assert';
 import * as t from './rest-types';
 import fetch, { Response } from 'node-fetch';
 import { URLSearchParams } from 'url';
