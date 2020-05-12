@@ -1,36 +1,25 @@
 import { mergeSchemas } from 'graphql-tools';
 import { join } from 'path';
-import { readVar, hasVar } from './env';
 import { contextBuilder } from './contextBuilder';
 import { collectRemoteExtensions } from './collectRemoteExtensions';
-import {
-    collectLocalExtensions,
-    ExtensionPathResolverResult,
-} from './localExtensions';
+import { collectLocalExtensions } from './localExtensions';
 
 export type MagentoGraphQLOpts = {
-    /** Allow customizing how local extensions are found */
-    localExtensionPathResolver?: (
-        extensionRoots: string[],
-    ) => Promise<ExtensionPathResolverResult[]>;
+    adobeIOPackages?: string[];
 };
 
 /**
  * @summary Creates a new executable GraphQL schema and context
  *          function that can be used with any node HTTP library
  */
-export async function prepareForServer(opts: MagentoGraphQLOpts = {}) {
+export async function prepareForServer(opts: MagentoGraphQLOpts) {
     const builtInExtensionsRoot = join(__dirname, '../extensions');
     // TODO: Support more than just our built-in modules
     const extensionRoots = [builtInExtensionsRoot];
-    const localExtensions = await collectLocalExtensions(
-        extensionRoots,
-        opts.localExtensionPathResolver,
-    );
+    const localExtensions = await collectLocalExtensions(extensionRoots);
     const schemas = [...localExtensions.schemas, ...localExtensions.typeDefs];
-    if (hasVar('IO_PACKAGES')) {
-        const packages = readVar('IO_PACKAGES').asArray();
-        schemas.push(await collectRemoteExtensions(packages));
+    if (Array.isArray(opts.adobeIOPackages)) {
+        schemas.push(await collectRemoteExtensions(opts.adobeIOPackages));
     }
 
     const schema = mergeSchemas({
