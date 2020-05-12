@@ -5,6 +5,8 @@ export type GraphQLContext<T extends object = {}> = T &
         store?: string;
     }>;
 
+export type ContextFn = (headers: Record<string, unknown>) => GraphQLContext;
+
 export type ContextExtension = (
     context: Readonly<GraphQLContext>,
 ) => Record<string, unknown> | void;

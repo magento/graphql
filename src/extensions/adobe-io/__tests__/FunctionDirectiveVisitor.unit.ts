@@ -10,7 +10,7 @@ import gql from 'graphql-tag';
 import { makeExecutableSchema } from 'graphql-tools';
 import {
     prependPkgNameToFunctionDirectives,
-    FunctionDirectiveVisitor,
+    createFunctionDirectiveVisitor,
 } from '../FunctionDirectiveVisitor';
 import { invokeRemoteResolver } from '../adobe-io';
 
@@ -30,6 +30,12 @@ const findDirectiveByName = (schema: ASTNode, name: string) => {
     });
     return foundNodes;
 };
+
+const owOpts = () => ({
+    api_key: 'api_key',
+    apihost: 'apihost',
+    namespace: 'namespace',
+});
 
 test('prependPkgNameToFunctionDirectives works with 1 @function directive', () => {
     const schema = gql`
@@ -109,7 +115,7 @@ test('FunctionDirectiveVisitor attaches resolver to @function directive', () => 
         // @ts-ignore same as comment below
         schemaDirectives: {
             // @ts-ignore Wrong types in graphql-tools@5.0.0. Logged a bug: https://github.com/Urigo/graphql-tools/issues/1376
-            function: FunctionDirectiveVisitor,
+            function: createFunctionDirectiveVisitor(owOpts()),
         },
     });
     const queryField = executableSchema.getType('Query') as GraphQLObjectType;
@@ -129,7 +135,7 @@ test('Resolver set by FunctionDirectiveVisitor invokes I/O func with resolver in
         schemaDirectives: {
             // @ts-ignore Wrong types in graphql-tools@5.0.0.
             // Logged a bug: https://github.com/Urigo/graphql-tools/issues/1376
-            function: FunctionDirectiveVisitor,
+            function: createFunctionDirectiveVisitor(owOpts()),
         },
     });
     const queryField = executableSchema.getType('Query') as GraphQLObjectType;
@@ -144,6 +150,11 @@ test('Resolver set by FunctionDirectiveVisitor invokes I/O func with resolver in
                 parent: expect.any(Object),
                 args: expect.any(Object),
             }),
+        }),
+        expect.objectContaining({
+            api_key: expect.any(String),
+            apihost: expect.any(String),
+            namespace: expect.any(String),
         }),
     );
 });

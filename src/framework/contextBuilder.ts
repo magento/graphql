@@ -1,4 +1,4 @@
-import { GraphQLContext } from '../types';
+import { GraphQLContext, ContextFn } from '../types';
 import { LocalGQLExtension } from './localExtensions';
 
 type ContextBuilderInput = {
@@ -9,7 +9,7 @@ type ContextBuilderInput = {
  * @summary Builds a new instance of the GraphQLContext,
  *          with additions from local extensions
  */
-export function contextBuilder({ extensions }: ContextBuilderInput) {
+export function contextBuilder({ extensions }: ContextBuilderInput): ContextFn {
     return (headers: Record<string, unknown>): GraphQLContext => {
         const legacyToken = tokenFromAuthHeader(
             headers.authorization as string,

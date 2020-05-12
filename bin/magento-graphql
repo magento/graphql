@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-require('../dist/server')
-    .default()
+require('../dist/cli')
+    .run()
     .catch(err => {
         console.error(err);
         process.exit(1);

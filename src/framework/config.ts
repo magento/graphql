@@ -42,10 +42,19 @@ export function createEnvConfigReader<TConfigNames extends string>(
  * @summary Casts configuration values to their requested types
  */
 export function createCasters(key: string, value: unknown): ConfigReaderTypes {
+    const cleanError = <T>(fn: () => T) => () => {
+        try {
+            return fn();
+        } catch (err) {
+            throw new Error(`Failed parsing configuration value: "${key}"`);
+        }
+    };
     return {
-        asString: () => String(value),
-        asNumber: () => Number(value),
-        asBoolean: () => !!value,
-        asStringArray: () => (value as string).split(',').map(s => s.trim()),
+        asString: cleanError(() => String(value)),
+        asNumber: cleanError(() => Number(value)),
+        asBoolean: cleanError(() => !!value),
+        asStringArray: cleanError(() =>
+            (value as string).split(',').map(s => s.trim()),
+        ),
     };
 }

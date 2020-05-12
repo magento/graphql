@@ -1,18 +1,26 @@
 import fastify, { FastifyRequest } from 'fastify';
 import fastifyGQL from 'fastify-gql';
-import { readVar } from './framework/env';
 import { assert } from './assert';
-import {
-    prepareForServer,
-    MagentoGraphQLOpts,
-} from './framework/prepareForServer';
+import { GraphQLSchema } from 'graphql';
+import { ContextFn } from './types';
 
 type MagentoGraphQLServerOpts = {
-    localExtensionPathResolver?: MagentoGraphQLOpts['localExtensionPathResolver'];
+    host: string;
+    port: number;
+    schema: GraphQLSchema;
+    context: ContextFn;
 };
 
-export default async function(opts: MagentoGraphQLServerOpts) {
-    const { schema, context } = await prepareForServer(opts);
+/**
+ * @summary Fastify-based implementation of the Magento
+ *          GraphQL server
+ */
+export async function start({
+    host,
+    port,
+    schema,
+    context,
+}: MagentoGraphQLServerOpts) {
     const fastifyServer = fastify();
     fastifyServer.register(fastifyGQL, {
         schema,
@@ -22,7 +30,7 @@ export default async function(opts: MagentoGraphQLServerOpts) {
         context: (req: FastifyRequest) => context(req.headers),
     });
 
-    await fastifyServer.listen(readVar('PORT').asNumber());
+    await fastifyServer.listen(port, host);
     const netAddress = fastifyServer.server.address();
     assert(
         netAddress && typeof netAddress === 'object',

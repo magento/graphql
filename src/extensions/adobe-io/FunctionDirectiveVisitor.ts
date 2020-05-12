@@ -2,7 +2,8 @@ import { GraphQLField } from 'graphql';
 import { SchemaDirectiveVisitor } from 'graphql-tools';
 import { invokeRemoteResolver } from './adobe-io';
 import { DocumentNode, visit } from 'graphql';
-import { assert } from '../assert';
+import { assert } from '../../assert';
+import openwhisk from 'openwhisk';
 
 /**
  * @summary We allow extension developers to specify an I/O function
@@ -30,26 +31,28 @@ export function prependPkgNameToFunctionDirectives(
     });
 }
 
-/**
- * @summary Applies resolvers specified by @function directive.
- */
-export class FunctionDirectiveVisitor extends SchemaDirectiveVisitor {
-    visitFieldDefinition(field: GraphQLField<unknown, unknown>) {
-        const resolver = (parent: unknown, args: unknown) => {
-            const resolverData = {
-                parent,
-                args,
+export function createFunctionDirectiveVisitor(owOpts: openwhisk.Options) {
+    return class FunctionDirectiveVisitor extends SchemaDirectiveVisitor {
+        visitFieldDefinition(field: GraphQLField<unknown, unknown>) {
+            const resolver = (parent: unknown, args: unknown) => {
+                const resolverData = {
+                    parent,
+                    args,
+                };
+                const directiveArgs = (this as any).args;
+                assert(
+                    typeof directiveArgs.name === 'string',
+                    'Expected @function directive name',
+                );
+                return invokeRemoteResolver(
+                    {
+                        action: directiveArgs.name,
+                        resolverData,
+                    },
+                    owOpts,
+                );
             };
-            const directiveArgs = (this as any).args;
-            assert(
-                typeof directiveArgs.name === 'string',
-                'Expected @function directive name',
-            );
-            return invokeRemoteResolver({
-                action: directiveArgs.name,
-                resolverData,
-            });
-        };
-        field.resolve = resolver;
-    }
+            field.resolve = resolver;
+        }
+    };
 }

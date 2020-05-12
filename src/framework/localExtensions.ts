@@ -137,9 +137,6 @@ export async function collectLocalExtensions(
         schemas.push(...ext.schemas);
     }
 
-    const names = extNames.join('\n  ');
-    console.log(`Using ${extNames.length} local extensions(s):\n  ${names}`);
-
     return {
         typeDefs,
         resolvers,
