@@ -1,4 +1,3 @@
-import { readVar } from './env';
 import openwhisk from 'openwhisk';
 
 /**
@@ -7,7 +6,7 @@ import openwhisk from 'openwhisk';
  */
 export async function getAllRemoteGQLSchemas(
     packages: string[],
-    io: openwhisk.Options = getOWClientOptsFromEnv(),
+    io: openwhisk.Options,
 ) {
     // Note: We purposely fail here if _any_ single package has an issue.
     // We could technically recover and proceed with the working packages,
@@ -34,7 +33,7 @@ type ResolverInput = {
  */
 export async function invokeRemoteResolver(
     { action, resolverData }: ResolverInput,
-    io: openwhisk.Options = getOWClientOptsFromEnv(),
+    io: openwhisk.Options,
 ) {
     const ow = openwhisk(io);
 
@@ -67,12 +66,4 @@ async function invokeGraphQLMetaFunction(pkg: string, io: openwhisk.Options) {
     });
 
     return response.typeDefs;
-}
-
-export function getOWClientOptsFromEnv() {
-    return {
-        api_key: readVar('IO_API_KEY').asString(),
-        apihost: readVar('ADOBE_IO_HOST').asString(),
-        namespace: readVar('ADOBE_IO_NAMESPACE').asString(),
-    };
 }

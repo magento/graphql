@@ -1,26 +1,18 @@
 import { mergeSchemas } from 'graphql-tools';
 import { join } from 'path';
 import { contextBuilder } from './contextBuilder';
-import { collectRemoteExtensions } from './collectRemoteExtensions';
 import { collectLocalExtensions } from './localExtensions';
-
-export type MagentoGraphQLOpts = {
-    adobeIOPackages?: string[];
-};
 
 /**
  * @summary Creates a new executable GraphQL schema and context
  *          function that can be used with any node HTTP library
  */
-export async function prepareForServer(opts: MagentoGraphQLOpts) {
+export async function prepareForServer() {
     const builtInExtensionsRoot = join(__dirname, '../extensions');
     // TODO: Support more than just our built-in modules
     const extensionRoots = [builtInExtensionsRoot];
     const localExtensions = await collectLocalExtensions(extensionRoots);
     const schemas = [...localExtensions.schemas, ...localExtensions.typeDefs];
-    if (Array.isArray(opts.adobeIOPackages)) {
-        schemas.push(await collectRemoteExtensions(opts.adobeIOPackages));
-    }
 
     const schema = mergeSchemas({
         // @ts-ignore Types are wrong. The lib's implementation
