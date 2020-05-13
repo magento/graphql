@@ -1,5 +1,5 @@
 {
-  "name": "magento-graphql",
+  "name": "@magento/graphql",
   "private": true,
   "version": "0.0.1",
   "description": "Official Magento 2 GraphQL Server",
