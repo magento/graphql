@@ -2,7 +2,7 @@
   "name": "@magento/graphql",
   "private": true,
   "version": "0.0.1",
-  "description": "Official Magento 2 GraphQL Server",
+  "description": "Decoupled GraphQL Server for Magento 2 stores",
   "main": "dist/api.js",
   "bin": {
     "magento-graphql": "bin/magento-graphql"
