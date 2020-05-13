@@ -1,14 +1,17 @@
-# Out of Process Extensibility
+# @magento/magento-graphql-adobe-io
 
-The Magento GraphQL server enables developers to extend the graph by adding new queries/mutations/fields/etc via [Adobe I/O Runtime Functions](https://www.adobe.io/apis/experienceplatform/runtime.html). They are packaged as an Adobe I/O _Application_ (built on [OpenWhisk Packages](https://github.com/apache/openwhisk/blob/e12c5de56aaf9e24a180f21f168204cf01125d1f/docs/packages.md)) that we'll call a _GraphQL Extension Package_.
+**Very Experimental, flawed, and incomplete**
+
+Allows extending the `@magento/graphql` schema, delegating execution of new fields to [Adobe I/O Runtime Functions](https://www.adobe.io/apis/experienceplatform/runtime.html).
+
+These I/O extensions are packaged as an Adobe I/O _Application_ (built on [OpenWhisk Packages](https://github.com/apache/openwhisk/blob/e12c5de56aaf9e24a180f21f168204cf01125d1f/docs/packages.md)).
 
 ## Writing Your First GraphQL Extension Package
 
-A GraphQL Extension Package is a logical collection of related Adobe I/O functions. It's quick to get started making your own.
+A I/O extension is a logical collection of related Adobe I/O functions. It's quick to get started making your own.
 
 **Prerequisites**
 
--   `node.js` version >= `10.0.0`
 -   Adobe I/O Account and namespace
 
 ### Create a new Adobe I/O Application
