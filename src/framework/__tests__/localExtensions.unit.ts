@@ -28,7 +28,7 @@ test('collectLocalExtensions throws with descriptive error when missing setup fu
         await collectLocalExtensions([packagesDir]);
     } catch (err) {
         expect(err.message).toMatch(
-            /An extension exported an invalid configuration/,
+            /An extension did not export any configuration/,
         );
     }
 });

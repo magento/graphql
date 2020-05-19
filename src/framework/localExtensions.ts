@@ -6,18 +6,12 @@ import { ContextExtension } from '../types';
 import { Sorter } from '@hapi/topo';
 import { createEnvConfigReader, ConfigReader, ConfigDefs } from './config';
 
-export const EXTENSION_MARKER = Symbol('magento-graphql-extension');
-
 type ExtensionRegistration<TConfigNames extends string> = Readonly<{
     config: ConfigDefs<TConfigNames>;
     setupFn: (
         configReader: ConfigReader<TConfigNames>,
         api: ExtensionAPI,
     ) => void | Promise<void>;
-}>;
-
-type ExtensionRegistrationWrapper<TConfigNames extends string> = Readonly<{
-    [EXTENSION_MARKER]: ExtensionRegistration<TConfigNames>;
 }>;
 
 /**
@@ -29,12 +23,10 @@ export function createExtension<TConfigNames extends string>(
         configReader: ConfigReader<TConfigNames>,
         api: ExtensionAPI,
     ) => void | Promise<void>,
-): ExtensionRegistrationWrapper<TConfigNames> {
+): ExtensionRegistration<TConfigNames> {
     return {
-        [EXTENSION_MARKER]: {
-            config,
-            setupFn,
-        },
+        config,
+        setupFn,
     };
 }
 
@@ -200,6 +192,8 @@ async function invokeExtensionSetup<TConfigNames extends string>(
     };
 
     const { config, setupFn } = registration;
+    // TODO: Would be nice if the config reader factory
+    // were configurable to make tests less of a chore
     const configReader = createEnvConfigReader(config);
     await setupFn(configReader, extensionAPI);
     return setupConfig;
@@ -223,9 +217,10 @@ const prepareExtension = async (opts: {
         throw err;
     }
 
-    const defaultExport = pkg.__esModule ? pkg.default : pkg;
+    // compat for CommonJS + transpiled ES2015 module
+    const defaultExport = pkg.__esModule && pkg.default ? pkg.default : pkg;
 
-    if (!defaultExport) {
+    if (!(defaultExport && typeof defaultExport.setupFn === 'function')) {
         throw new Error(
             `An extension did not export any configuration:\n` +
                 `  Extension: ${packageJSON.name}\n` +
@@ -233,21 +228,7 @@ const prepareExtension = async (opts: {
         );
     }
 
-    const isWrappedExtension = Object.prototype.hasOwnProperty.call(
-        defaultExport,
-        EXTENSION_MARKER,
-    );
-
-    if (!isWrappedExtension) {
-        throw new Error(
-            `An extension exported an invalid configuration:\n` +
-                `  Extension: ${packageJSON.name}\n` +
-                `  Entry Path: ${entryPoint}`,
-        );
-    }
-
-    const wrappedRegistration: ExtensionRegistrationWrapper<string> = defaultExport;
-    const registration = wrappedRegistration[EXTENSION_MARKER];
+    const registration: ExtensionRegistration<string> = defaultExport;
     let setupConfig;
 
     try {
