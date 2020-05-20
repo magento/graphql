@@ -1,6 +1,8 @@
 import { createMonolithApolloFetcher } from './apollo-fetcher';
 import { introspectSchema, makeRemoteExecutableSchema } from 'graphql-tools';
 import { createExtension } from '../../api';
+import { typeDefs } from './typeDefs';
+import { buildASTSchema, findBreakingChanges } from 'graphql';
 
 const extensionConfig = {
     LEGACY_GRAPHQL_URL: {
@@ -43,6 +45,30 @@ export default createExtension(extensionConfig, async (config, api) => {
             `Failed introspecting remote Magento schema at "${legacyURL}". ` +
                 'Make sure that the LEGACY_GRAPHQL_URL variable is set to ' +
                 'the correct value for your Magento instance',
+        );
+    }
+
+    for (const def of typeDefs.definitions) {
+        // Extension types extend from the root Query type, but we're
+        // using the typeDefs to create a stand-alone schema for the purpose
+        // of breaking change detection. Mutations here are fine because
+        // the schema is discarded after the breaking change detection
+        if (def.kind === 'ObjectTypeExtension' && def.name.value === 'Query') {
+            (def.kind as any) = 'ObjectTypeDefinition';
+            break;
+        }
+    }
+    const knownSchema = buildASTSchema(typeDefs);
+    const breakingChanges = findBreakingChanges(knownSchema, legacySchema);
+
+    if (breakingChanges.length) {
+        const changes = breakingChanges
+            .map(c => `    ${c.description}`)
+            .join('\n');
+        throw new Error(
+            "Incompatibilities were found in your store's schema\n" +
+                `  Store: ${legacyURL}\n` +
+                `  Reasons:\n    ${changes}`,
         );
     }
 

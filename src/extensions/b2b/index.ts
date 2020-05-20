@@ -1,4 +1,4 @@
-import { IResolvers } from '../../../generated/graphql';
+import { Resolvers } from '../../../generated/graphql';
 import { B2BAPIClient } from './B2BAPIClient';
 import { typeDefs } from './typeDefs';
 import * as r from './restToGQLType';
@@ -64,7 +64,7 @@ export default createExtension(extensionConfig, (config, api) => {
         };
     });
 
-    const resolvers: IResolvers<Context> = {
+    const resolvers: Resolvers<Context> = {
         Query: {
             company(root, args, context) {
                 const { client } = context[EXTNAME];
