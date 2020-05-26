@@ -27,10 +27,12 @@ export function createEnvConfigReader<TConfigNames extends string>(
     // Object.prototype.hasOwnProperty in case we get a config created
     // with `Object.create(null)` (yay ES5)
     const hasOwnProp = Object.prototype.hasOwnProperty.bind(config);
+    /* eslint-disable no-process-env */
     const get = (key: TConfigNames) =>
         process.env.hasOwnProperty(key)
             ? process.env[key]
             : config[key].default;
+    /* eslint-enable no-process-env */
 
     return {
         get: (key: TConfigNames) => createCasters(key, get(key)),

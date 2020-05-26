@@ -1,6 +1,6 @@
 # Extensions
 
-Extensions enable developers to extend the Graph exposed by the `magento-graphql` server.
+Extensions enable developers to extend the Graph exposed by the `@magento/graphql` server.
 
 ## Requirements
 

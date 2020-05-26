@@ -13,7 +13,7 @@
     "plugins": ["@typescript-eslint"],
     "overrides": [
         {
-            "files": ["**/__tests__/*.js"],
+            "files": ["**/__tests__/*.ts"],
             "rules": {
                 "no-process-env": "off"
             }

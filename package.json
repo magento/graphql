@@ -12,9 +12,10 @@
     "npm": ">=6"
   },
   "scripts": {
+    "//": "** See docs for all scripts in docs/DEVELOPMENT.md** ",
     "build": "npm run clean && node scripts/protogen.js && gql-gen && tsc",
     "start": "bin/magento-graphql",
-    "test": "eslint . && prettier --list-different $(head -1 prettier-globs) && jest",
+    "test": "eslint '*/**/*.{js,ts}' && prettier --list-different $(head -1 prettier-globs) && jest",
     "watch": "scripts/dev.js",
     "clean": "rm -rf dist generated",
     "format": "prettier --write $(head -1 prettier-globs)"
