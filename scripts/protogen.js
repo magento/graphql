@@ -1,3 +1,7 @@
+// Protocol buffers are only used within the `greeting` GraphQL extension
+// today. However, this will be used more as Magento begins authoring new
+// APIs exposed via gRPC
+
 const { mkdir, readFile } = require('fs').promises;
 const { join } = require('path');
 const execa = require('execa');

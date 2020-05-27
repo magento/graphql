@@ -13,7 +13,9 @@ type MagentoGraphQLServerOpts = {
 
 /**
  * @summary Fastify-based implementation of the Magento
- *          GraphQL server
+ *          GraphQL server. Intentionally minimal to allow
+ *          us to shift if we decide to go back to a more
+ *          typical setup like express + apollo-server-express
  */
 export async function start({
     host,

@@ -13,6 +13,8 @@
 
 Runs a production build of `@magento/graphql`. Typically used prior to publishing to `npm`, but also useful for one-off local builds.
 
+See [`CODEGEN.md`](CODEGEN.md) for a detailed overview of what's generated during a build.
+
 ```sh
 > npm run build
 ```
@@ -51,7 +53,9 @@ Runs [`prettier`](https://prettier.io/) to update all code formatting to a stand
 
 ### watch
 
-Runs a full, clean build of `@magento/graphql`, then runs a file-watcher to handle incremental compilation. Useful for quicker cycles during local development
+Runs a full, clean build of `@magento/graphql`, then runs a file-watcher to handle incremental compilation. Useful for quicker cycles during local development.
+
+See [`CODEGEN.md`](CODEGEN.md) for a detailed overview of what's generated during a build.
 
 ```sh
 > npm run watch

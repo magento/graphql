@@ -2,13 +2,19 @@
 
 Extensions enable developers to extend the Graph exposed by the `@magento/graphql` server.
 
+## API Status
+
+Expect frequent breaking changes. The API is being [dogfooded](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) while building out API coverage.
+
+For the time being, only extensions in `src/extensions` (first-party) will run automatically. Support for published npm packages will be added as APIs stabilize.
+
 ## Requirements
 
-An extension must:
+An extension is an [node module](https://docs.npmjs.com/packages-and-modules/), written in JavaScript (or TypeScript), that fulfills the following criteria:
 
-1. Have a `package.json` in its root directory, with a `name` property of the format `@<npm-username>/magento-graphql-<extension-name>`
-1. Have an entry point module whose default export is the result from calling the `createExtension` API
-1. Have a `main` field in `package.json` pointing to the entry point module's path
+1. Has a `package.json` in its root directory, with a `name` property of the format `@<npm-username>/magento-graphql-<extension-name>`
+1. Has a [`main` field in `package.json`](https://docs.npmjs.com/files/package.json#main) pointing to a package entry point
+1. Has an entry point that exports the extension's configuration (see `createExtension` API)
 
 ## Example Extension
 
@@ -53,7 +59,7 @@ export default createExtension(extensionConfig, (config, api) => {
     // Declare resolvers
     const resolvers = {
         Query: {
-            firstExtension(root, args) {
+            echo(root, args) {
                 return args.value;
             },
         },
