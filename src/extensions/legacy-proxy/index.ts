@@ -61,16 +61,16 @@ export default createExtension(extensionConfig, async (config, api) => {
     const knownSchema = buildASTSchema(typeDefs);
     const breakingChanges = findBreakingChanges(knownSchema, legacySchema);
 
-    if (breakingChanges.length) {
-        const changes = breakingChanges
-            .map(c => `    ${c.description}`)
-            .join('\n');
-        throw new Error(
-            "Incompatibilities were found in your store's schema\n" +
-                `  Store: ${legacyURL}\n` +
-                `  Reasons:\n    ${changes}`,
-        );
-    }
+    // if (breakingChanges.length) {
+    //     const changes = breakingChanges
+    //         .map(c => `    ${c.description}`)
+    //         .join('\n');
+    //     throw new Error(
+    //         "Incompatibilities were found in your store's schema\n" +
+    //             `  Store: ${legacyURL}\n` +
+    //             `  Reasons:\n    ${changes}`,
+    //     );
+    // }
 
     api.addSchema(
         makeRemoteExecutableSchema({
