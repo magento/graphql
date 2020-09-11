@@ -1,8 +1,8 @@
-import { createMonolithApolloFetcher } from './apollo-fetcher';
+import { createMonolithExecutor } from './monolith-executor';
 import { introspectSchema, makeRemoteExecutableSchema } from 'graphql-tools';
 import { createExtension } from '../../api';
 import { typeDefs } from './typeDefs';
-import { buildASTSchema, findBreakingChanges } from 'graphql';
+// import { buildASTSchema, findBreakingChanges } from 'graphql';
 
 const extensionConfig = {
     LEGACY_GRAPHQL_URL: {
@@ -36,10 +36,10 @@ const extensionConfig = {
  */
 export default createExtension(extensionConfig, async (config, api) => {
     const legacyURL = config.get('LEGACY_GRAPHQL_URL').asString();
-    const fetcher = createMonolithApolloFetcher(legacyURL);
+    const executor = createMonolithExecutor(legacyURL);
     let legacySchema;
     try {
-        legacySchema = await introspectSchema(fetcher);
+        legacySchema = await introspectSchema(executor);
     } catch (err) {
         throw new Error(
             `Failed introspecting remote Magento schema at "${legacyURL}". ` +
@@ -58,8 +58,8 @@ export default createExtension(extensionConfig, async (config, api) => {
             break;
         }
     }
-    const knownSchema = buildASTSchema(typeDefs);
-    const breakingChanges = findBreakingChanges(knownSchema, legacySchema);
+    // const knownSchema = buildASTSchema(typeDefs);
+    // const breakingChanges = findBreakingChanges(knownSchema, legacySchema);
 
     // if (breakingChanges.length) {
     //     const changes = breakingChanges
@@ -75,7 +75,7 @@ export default createExtension(extensionConfig, async (config, api) => {
     api.addSchema(
         makeRemoteExecutableSchema({
             schema: legacySchema,
-            fetcher,
+            executor,
         }),
     );
 });

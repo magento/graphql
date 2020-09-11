@@ -1,8 +1,11 @@
 import { createExtension } from '../../api';
 import {
-    IFetcherOperation,
     introspectSchema,
-    makeRemoteExecutableSchema,
+    wrapSchema,
+    AsyncExecutor,
+    RenameTypes,
+    FilterObjectFields,
+    ExecutionParams,
 } from 'graphql-tools';
 import fetch from 'node-fetch';
 import { print } from 'graphql';
@@ -20,33 +23,40 @@ const extensionConfig = {
 export default createExtension(extensionConfig, async (config, api) => {
     const searchURL = config.get('PREMIUM_SEARCH_GRAPHQL_URL').asString();
     const apiKey = config.get('PREMIUM_SEARCH_API_KEY').asString();
-    const fetcher = createSearchFetcher(searchURL, apiKey);
-
+    const executor = createSearchExecutor(searchURL, apiKey);
     let searchSchema;
 
     try {
-        searchSchema = await introspectSchema(fetcher);
+        searchSchema = await introspectSchema(executor);
     } catch (err) {
         throw new Error('Failed introspecting remote Search Schema');
     }
 
-    api.addSchema(
-        makeRemoteExecutableSchema({
-            schema: searchSchema,
-            fetcher,
+    const transformedSchema = wrapSchema({ schema: searchSchema, executor }, [
+        new RenameTypes(name => {
+            // Prevent conflict with Magento Core's "Price" type
+            if (name === 'Price') return 'SearchServicePrice';
         }),
-    );
+        new FilterObjectFields((typeName, fieldName) => {
+            return !(typeName === 'ProductItem' && fieldName === 'Price');
+        }),
+    ]);
+
+    api.addSchema(transformedSchema);
 });
 
-const createSearchFetcher = (searchURL: string, apiKey: string) => {
-    return (opts: IFetcherOperation) => {
+const createSearchExecutor = (
+    searchURL: string,
+    apiKey: string,
+): AsyncExecutor => {
+    return (opts: ExecutionParams) => {
         const headers = {
             'Content-Type': 'application/json',
             'X-API-KEY': apiKey,
         };
 
-        if (opts.context && opts.context.graphqlContext) {
-            const ctx = opts.context.graphqlContext as GraphQLContext;
+        if (opts.context) {
+            const ctx: GraphQLContext = opts.context;
             Object.assign(headers, {
                 'MAGENTO-ENVIRONMENT-ID':
                     ctx.requestHeaders['magento-environment-id'],
@@ -61,9 +71,8 @@ const createSearchFetcher = (searchURL: string, apiKey: string) => {
             method: 'POST',
             headers,
             body: JSON.stringify({
-                query: print(opts.query),
+                query: print(opts.document),
                 variables: opts.variables,
-                operationName: opts.operationName,
             }),
         }).then(res => res.json());
     };

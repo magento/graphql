@@ -1,26 +1,27 @@
-import { IFetcherOperation } from 'graphql-tools';
+import { AsyncExecutor, ExecutionParams } from 'graphql-tools';
 import { print } from 'graphql';
 import { GraphQLContext } from '../../types';
 import { default as nodeFetch } from 'node-fetch';
 
 /**
- * @summary Create a custom "Fetcher" for makeRemoteExecutableSchema to use
+ * @summary Create a custom "execytir" for wrapSchema to use
  *          when calling the Monolith/Legacy Magento GraphQL API (PHP).
  *          Ensures required Magento headers are passed along
  *
  * @see https://devdocs.magento.com/guides/v2.3/graphql/send-request.html#request-headers
- * @see https://www.apollographql.com/docs/graphql-tools/remote-schemas/#fetcher-api
+ * @see https://www.graphql-tools.com/docs/remote-schemas#wrapschemaschemaconfig
  */
-export function createMonolithApolloFetcher(
+export function createMonolithExecutor(
     monolithGraphQLUrl: string,
     fetch: WindowOrWorkerGlobalScope['fetch'] | typeof nodeFetch = nodeFetch,
-) {
-    return async (opts: IFetcherOperation) => {
+): AsyncExecutor {
+    return async (opts: ExecutionParams) => {
         const headers = {
             'Content-Type': 'application/json',
         };
+
         if (opts.context) {
-            const context: GraphQLContext = opts.context.graphqlContext;
+            const context: GraphQLContext = opts.context;
             Object.assign(
                 headers,
                 filterUndefinedEntries({
@@ -35,9 +36,8 @@ export function createMonolithApolloFetcher(
             method: 'POST',
             headers,
             body: JSON.stringify({
-                query: print(opts.query),
+                query: print(opts.document),
                 variables: opts.variables,
-                operationName: opts.operationName,
             }),
         });
 

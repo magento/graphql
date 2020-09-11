@@ -1,5 +1,5 @@
 import gql from 'graphql-tag';
-import { createMonolithApolloFetcher } from '../apollo-fetcher';
+import { createMonolithExecutor } from '../monolith-executor';
 import { Response } from 'node-fetch';
 
 const fetchJSONStub = (res: string) =>
@@ -11,31 +11,29 @@ const SAMPLE_QUERY = gql`
     }
 `;
 
-test('fetcher sends requests to correct url', async () => {
+test('executor sends requests to correct url', async () => {
     const fetchStub = fetchJSONStub('{}');
-    const fetcher = createMonolithApolloFetcher(
+    const executor = createMonolithExecutor(
         'https://www.foo.test/graphql',
         fetchStub,
     );
-    await fetcher({ query: SAMPLE_QUERY });
+    await executor({ document: SAMPLE_QUERY });
     const [url] = fetchStub.mock.calls[0];
     expect(url).toEqual('https://www.foo.test/graphql');
 });
 
-test('fetcher passes monolith-specific headers from context', async () => {
+test('executor passes monolith-specific headers from context', async () => {
     const fetchStub = fetchJSONStub('{}');
-    const fetcher = createMonolithApolloFetcher(
+    const executor = createMonolithExecutor(
         'https://www.foo.test/graphql',
         fetchStub,
     );
-    await fetcher({
-        query: SAMPLE_QUERY,
+    await executor({
+        document: SAMPLE_QUERY,
         context: {
-            graphqlContext: {
-                legacyToken: 'token123',
-                currency: 'USD',
-                store: '1',
-            },
+            legacyToken: 'token123',
+            currency: 'USD',
+            store: '1',
         },
     });
     const [, fetchOpts] = fetchStub.mock.calls[0];
@@ -46,14 +44,14 @@ test('fetcher passes monolith-specific headers from context', async () => {
     });
 });
 
-test('fetcher skips monolith-specific headers when context not provided', async () => {
+test('executor skips monolith-specific headers when context not provided', async () => {
     const fetchStub = fetchJSONStub('{}');
-    const fetcher = createMonolithApolloFetcher(
+    const executor = createMonolithExecutor(
         'https://www.foo.test/graphql',
         fetchStub,
     );
-    await fetcher({
-        query: SAMPLE_QUERY,
+    await executor({
+        document: SAMPLE_QUERY,
     });
     const [, fetchOpts] = fetchStub.mock.calls[0];
     const headers = Object.keys(fetchOpts.headers);
@@ -62,20 +60,18 @@ test('fetcher skips monolith-specific headers when context not provided', async 
     expect(headers).not.toContain('Store');
 });
 
-test('fetcher excludes undefined and missing monolith-specific header values', async () => {
+test('executor excludes undefined and missing monolith-specific header values', async () => {
     const fetchStub = fetchJSONStub('{}');
-    const fetcher = createMonolithApolloFetcher(
+    const executor = createMonolithExecutor(
         'https://www.foo.test/graphql',
         fetchStub,
     );
-    await fetcher({
-        query: SAMPLE_QUERY,
+    await executor({
+        document: SAMPLE_QUERY,
         context: {
-            graphqlContext: {
-                legacyToken: 'token123',
-                store: undefined,
-                // excluded currency field
-            },
+            legacyToken: 'token123',
+            store: undefined,
+            // excluded currency field
         },
     });
     const [, fetchOpts] = fetchStub.mock.calls[0];
