@@ -17,7 +17,13 @@ export function contextBuilder({ extensions }: ContextBuilderInput): ContextFn {
         const currency = headers['Content-Currency'] as string | undefined;
         const store = headers.Store as string | undefined;
 
-        const baseContext = { legacyToken, currency, store };
+        const baseContext = {
+            legacyToken,
+            currency,
+            store,
+            requestHeaders: headers,
+        };
+
         // Copy `baseContext` before handing it out to extension `context`
         // functions to ensure any accidental mutations aren't seen by
         // other extensions

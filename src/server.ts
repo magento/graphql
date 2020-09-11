@@ -3,6 +3,7 @@ import fastifyGQL from 'fastify-gql';
 import { assert } from './assert';
 import { GraphQLSchema } from 'graphql';
 import { ContextFn } from './types';
+import fastifyCORS from 'fastify-cors';
 
 type MagentoGraphQLServerOpts = {
     host: string;
@@ -24,12 +25,19 @@ export async function start({
     context,
 }: MagentoGraphQLServerOpts) {
     const fastifyServer = fastify();
+
     fastifyServer.register(fastifyGQL, {
         schema,
         graphiql: 'playground',
         path: '/graphql',
         jit: 10,
         context: (req: FastifyRequest) => context(req.headers),
+    });
+
+    // TODO: This should never go to prod with a blanket
+    // whitelist
+    fastifyServer.register(fastifyCORS, {
+        origin: true,
     });
 
     await fastifyServer.listen(port, host);
