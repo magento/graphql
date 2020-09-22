@@ -11,11 +11,11 @@ import { createExtension, GraphQLContext } from '../../api';
 // https://github.com/microsoft/TypeScript/issues/26552
 const EXTNAME = '@magento/magento-graphql-b2b';
 
-type Context = GraphQLContext<{
+type ContextExtension = {
     [EXTNAME]: {
         client: B2BAPIClient;
     };
-}>;
+};
 
 const extensionConfig = {
     B2B_ADMIN_TOKEN: {
@@ -64,7 +64,7 @@ export default createExtension(extensionConfig, (config, api) => {
         };
     });
 
-    const resolvers: Resolvers<Context> = {
+    const resolvers: Resolvers<GraphQLContext & ContextExtension> = {
         Query: {
             company(root, args, context) {
                 const { client } = context[EXTNAME];

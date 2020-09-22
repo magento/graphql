@@ -11,6 +11,7 @@ export async function prepareForServer() {
     const builtInExtensionsRoot = join(__dirname, '../extensions');
     // TODO: Support more than just our built-in modules
     const extensionRoots = [builtInExtensionsRoot];
+
     const localExtensions = await collectLocalExtensions(extensionRoots);
 
     const schema = mergeSchemas({
@@ -24,6 +25,7 @@ export async function prepareForServer() {
     });
 
     const context = contextBuilder({
+        schema,
         extensions: localExtensions.extensions,
     });
 
