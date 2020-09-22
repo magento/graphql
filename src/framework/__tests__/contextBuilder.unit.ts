@@ -1,12 +1,14 @@
 import { contextBuilder } from '../contextBuilder';
+import { GraphQLSchema } from 'graphql';
 
 const extDefaults = () => ({
     typeDefs: [],
     resolvers: {},
-    schemas: [],
+    subschemas: [],
     deps: [],
     context: undefined,
 });
+const schema = new GraphQLSchema({ query: undefined });
 
 test('Namespaces extensions to context', () => {
     const extensions = [
@@ -16,7 +18,7 @@ test('Namespaces extensions to context', () => {
             context: () => ({ testProp: true }),
         },
     ];
-    const buildContext = contextBuilder({ extensions });
+    const buildContext = contextBuilder({ extensions, schema });
     const context = buildContext({});
     expect(context).toHaveProperty('@vendor/magento-graphql-foo');
 });
@@ -34,6 +36,7 @@ test('Does not persist mutations of context obj passed to extension', () => {
     ];
     const buildContext = contextBuilder({
         extensions,
+        schema,
     });
     const context = buildContext({});
     expect(context).not.toHaveProperty('shouldNotStay');
@@ -42,6 +45,7 @@ test('Does not persist mutations of context obj passed to extension', () => {
 test('Maps Magento core specific headers to top-level of context', () => {
     const buildContext = contextBuilder({
         extensions: [],
+        schema,
     });
     const context = buildContext({
         authorization: 'Bearer abcdefg',
@@ -75,5 +79,5 @@ test("an extension cannot see another extensions' context properties", () => {
         },
     ];
 
-    contextBuilder({ extensions })({});
+    contextBuilder({ extensions, schema })({});
 });

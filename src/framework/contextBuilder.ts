@@ -1,7 +1,10 @@
+import { GraphQLSchema } from 'graphql';
 import { GraphQLContext, ContextFn } from '../types';
 import { LocalGQLExtension } from './localExtensions';
+import { SchemaDelegator } from './schemaDelegator';
 
 type ContextBuilderInput = {
+    schema: GraphQLSchema;
     extensions: LocalGQLExtension[];
 };
 
@@ -9,7 +12,12 @@ type ContextBuilderInput = {
  * @summary Builds a new instance of the GraphQLContext,
  *          with additions from local extensions
  */
-export function contextBuilder({ extensions }: ContextBuilderInput): ContextFn {
+export function contextBuilder({
+    extensions,
+    schema,
+}: ContextBuilderInput): ContextFn {
+    const schemaDelegator = new SchemaDelegator(schema);
+
     return (headers: Record<string, unknown>): GraphQLContext => {
         const legacyToken = tokenFromAuthHeader(
             headers.authorization as string,
@@ -17,7 +25,14 @@ export function contextBuilder({ extensions }: ContextBuilderInput): ContextFn {
         const currency = headers['Content-Currency'] as string | undefined;
         const store = headers.Store as string | undefined;
 
-        const baseContext = { legacyToken, currency, store };
+        const baseContext: GraphQLContext = {
+            legacyToken,
+            currency,
+            store,
+            requestHeaders: headers,
+            schemaDelegator,
+        };
+
         // Copy `baseContext` before handing it out to extension `context`
         // functions to ensure any accidental mutations aren't seen by
         // other extensions

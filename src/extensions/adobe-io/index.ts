@@ -68,5 +68,5 @@ export default createExtension(extensionConfig, async (config, api) => {
         function: ioVisitor,
     });
 
-    api.addSchema(ioSchema);
+    api.stitchSubschema(ioSchema);
 });
