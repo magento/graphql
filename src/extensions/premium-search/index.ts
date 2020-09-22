@@ -62,7 +62,6 @@ export default createExtension(extensionConfig, async (config, api) => {
             product: {
                 selectionSet: '{ product { sku } }',
                 async resolve(parent, args, context, info) {
-                    debugger;
                     const result = await context.schemaDelegator.delegate(
                         'query',
                         {

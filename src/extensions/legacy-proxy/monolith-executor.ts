@@ -4,7 +4,7 @@ import { GraphQLContext } from '../../types';
 import { default as nodeFetch } from 'node-fetch';
 
 /**
- * @summary Create a custom "execytir" for wrapSchema to use
+ * @summary Create a custom "executor" for wrapSchema to use
  *          when calling the Monolith/Legacy Magento GraphQL API (PHP).
  *          Ensures required Magento headers are passed along
  *
