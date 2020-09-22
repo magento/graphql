@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { SubschemaConfig } from 'graphql-tools';
 import { IResolvers } from '../../generated/graphql';
 import { DocumentNode, GraphQLSchema } from 'graphql';
 import { ContextExtension } from '../types';
@@ -43,7 +44,7 @@ export type LocalGQLExtension = {
     name: string;
     typeDefs: DocumentNode[];
     resolvers: IResolvers;
-    schemas: GraphQLSchema[];
+    subschemas: (GraphQLSchema | SubschemaConfig)[];
     context?: ContextExtension;
     deps: string[];
 };
@@ -120,20 +121,20 @@ export async function collectLocalExtensions(
     const extNames = [];
     const typeDefs = [];
     const resolvers = [];
-    const schemas = [];
+    const subschemas = [];
 
     for (const ext of extensions) {
         extNames.push(ext.name);
         typeDefs.push(...ext.typeDefs);
         resolvers.push(ext.resolvers);
-        schemas.push(...ext.schemas);
+        subschemas.push(...ext.subschemas);
     }
 
     return {
         typeDefs,
         resolvers,
         extensions,
-        schemas,
+        subschemas,
     };
 }
 
@@ -156,7 +157,7 @@ function sortExtensions(extensions: LocalGQLExtension[]) {
 type ExtensionAPI = Readonly<{
     addTypeDefs: (defs: DocumentNode) => ExtensionAPI;
     addResolvers: (resolvers: IResolvers) => ExtensionAPI;
-    addSchema: (schema: GraphQLSchema) => ExtensionAPI;
+    stitchSubschema: (schema: GraphQLSchema | SubschemaConfig) => ExtensionAPI;
     extendContext: (contextExtension: ContextExtension) => ExtensionAPI;
 }>;
 
@@ -166,7 +167,7 @@ async function invokeExtensionSetup<TConfigNames extends string>(
     const setupConfig = {
         typeDefs: [] as DocumentNode[],
         resolvers: {} as IResolvers,
-        schemas: [] as GraphQLSchema[],
+        subschemas: [] as (GraphQLSchema | SubschemaConfig)[],
         context: undefined as ContextExtension | undefined,
     };
 
@@ -179,8 +180,8 @@ async function invokeExtensionSetup<TConfigNames extends string>(
             Object.assign(setupConfig.resolvers, resolvers);
             return extensionAPI;
         },
-        addSchema(schema) {
-            setupConfig.schemas.push(schema);
+        stitchSubschema(subschema) {
+            setupConfig.subschemas.push(subschema);
             return extensionAPI;
         },
         extendContext(onNewContext) {

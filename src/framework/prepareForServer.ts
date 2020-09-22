@@ -1,4 +1,4 @@
-import { mergeSchemas } from 'graphql-tools';
+import { stitchSchemas } from 'graphql-tools';
 import { join } from 'path';
 import { contextBuilder } from './contextBuilder';
 import { collectLocalExtensions } from './localExtensions';
@@ -14,20 +14,21 @@ export async function prepareForServer() {
 
     const localExtensions = await collectLocalExtensions(extensionRoots);
 
-    const schema = mergeSchemas({
-        schemas: localExtensions.schemas,
-        typeDefs: localExtensions.typeDefs,
+    const gateway = stitchSchemas({
+        subschemas: localExtensions.subschemas,
+        mergeTypes: true,
+        mergeDirectives: true,
         // @ts-ignore The `IResolvers` type that graphql-tools
         // uses has a string:any index signature that would widen
         // types, so we're ignoring it
         resolvers: localExtensions.resolvers,
-        mergeDirectives: true,
+        typeDefs: localExtensions.typeDefs,
     });
 
     const context = contextBuilder({
-        schema,
+        schema: gateway,
         extensions: localExtensions.extensions,
     });
 
-    return { schema, context };
+    return { schema: gateway, context };
 }

@@ -1,4 +1,3 @@
-import * as g from '../generated/graphql';
 import { SchemaDelegationContext } from './framework/schemaDelegator';
 
 export type GraphQLContext = Readonly<

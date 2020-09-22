@@ -2,7 +2,6 @@ import { createExtension } from '../../api';
 import gql from 'graphql-tag';
 import {
     introspectSchema,
-    wrapSchema,
     RenameTypes,
     TransformObjectFields,
     WrapQuery,
@@ -12,6 +11,7 @@ import {
     GraphQLInterfaceType,
     GraphQLNonNull,
     Kind,
+    GraphQLString,
 } from 'graphql';
 import { createSearchExecutor } from './executor';
 import { GraphQLContext } from '../../types';
@@ -39,32 +39,10 @@ export default createExtension(extensionConfig, async (config, api) => {
     try {
         searchSchema = await introspectSchema(executor);
     } catch (err) {
-        throw new Error('Failed introspecting remote Search Schema');
+        throw new Error(
+            `Failed introspecting remote Search Schema at "${searchURL}"`,
+        );
     }
-
-    const transformedSchema = wrapSchema({ schema: searchSchema, executor }, [
-        // Prevent conflict with Magento Core's "Price" type
-        new RenameTypes(name => {
-            if (name === 'Price') return 'ProductItemPrice';
-        }),
-
-        // Use Magento Core's `ProductInterface` instead of Search's `ProductItem` type
-        new TransformObjectFields((typeName, fieldName, fieldConfig) => {
-            if (typeName === 'ProductSearchItem' && fieldName === 'product') {
-                return {
-                    ...fieldConfig,
-                    type: new GraphQLNonNull(
-                        new GraphQLInterfaceType({
-                            name: 'ProductInterface',
-                            // Fields from `ProductInterface` will be merged
-                            // in by the framework
-                            fields: () => ({}),
-                        }),
-                    ),
-                };
-            }
-        }),
-    ]);
 
     const typeDefs = gql`
         # Minimal copy of types from Search Service. Only includes types
@@ -79,21 +57,12 @@ export default createExtension(extensionConfig, async (config, api) => {
         // a `ProductInterface` subset, instead of the `ProductItem` type
         ProductSearchItem: {
             // Note: This currently triggers N+1 calls to the monolith,
-            // TODO: Batching
+            // but that will be resolved when Search renames ProductItem to
+            // ProductInterface
             product: {
-                // Note: `selectionSet` won't work until proper schema
-                // stitching is in place (we only merge atm)
-                selectionSet: '{ product { name } }',
+                selectionSet: '{ product { sku } }',
                 async resolve(parent, args, context, info) {
-                    if (!parent.product.sku) {
-                        // TODO: Will hit this if client does not select the `sku` field.
-                        // Needs to be added to the selection set
-                        throw new Error(
-                            'Until Schema Stitching is properly implemented, ' +
-                                'you must select the "sku" field from "Query.productSearch"',
-                        );
-                    }
-
+                    debugger;
                     const result = await context.schemaDelegator.delegate(
                         'query',
                         {
@@ -111,15 +80,15 @@ export default createExtension(extensionConfig, async (config, api) => {
                                     ['products'],
                                     subtree => {
                                         // Inject a selection of the "items" field
-                                        // for the remote query
+                                        // for the query being sent to the php monolith
                                         return {
                                             kind: Kind.FIELD,
                                             name: {
                                                 kind: Kind.NAME,
                                                 value: 'items',
                                             },
-                                            // Move selected ProductInterface fields from
-                                            // request to a subtree of the "items" field
+                                            // Move selected ProductInterface fields from original
+                                            // location to a subtree of the "items" field
                                             selectionSet: subtree,
                                         };
                                     },
@@ -144,7 +113,36 @@ export default createExtension(extensionConfig, async (config, api) => {
         },
     };
 
-    api.addSchema(transformedSchema)
+    api.stitchSubschema({
+        schema: searchSchema,
+        executor,
+        transforms: [
+            // Prevent conflict with Magento Core's "Price" type
+            new RenameTypes(name => {
+                if (name === 'Price') return 'ProductItemPrice';
+            }),
+
+            // Use Magento Core's `ProductInterface` instead of Search's `ProductItem` type
+            new TransformObjectFields((typeName, fieldName, fieldConfig) => {
+                if (
+                    typeName === 'ProductSearchItem' &&
+                    fieldName === 'product'
+                ) {
+                    return {
+                        ...fieldConfig,
+                        type: new GraphQLNonNull(
+                            new GraphQLInterfaceType({
+                                name: 'ProductInterface',
+                                fields: () => ({
+                                    sku: { type: GraphQLString },
+                                }),
+                            }),
+                        ),
+                    };
+                }
+            }),
+        ],
+    })
         .addTypeDefs(typeDefs)
         .addResolvers(resolvers);
 });

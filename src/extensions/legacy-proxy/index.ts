@@ -72,7 +72,7 @@ export default createExtension(extensionConfig, async (config, api) => {
     //     );
     // }
 
-    api.addSchema(
+    api.stitchSubschema(
         makeRemoteExecutableSchema({
             schema: legacySchema,
             executor,
