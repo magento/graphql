@@ -21,7 +21,7 @@ const debounce = require('debounce');
 const chokidar = require('chokidar');
 const stripAnsi = require('strip-ansi');
 const { spawn } = require('child_process');
-const { invokeProtoc } = require('./protogen');
+// const { invokeProtoc } = require('./protogen');
 const { extname } = require('path');
 const execa = require('execa');
 const { promisify } = require('util');
@@ -39,7 +39,7 @@ async function init() {
     // Do all codegen _before_ the TypeScript build starts,
     // so we don't have a race condition that causes the
     // first TS build to report type errors
-    await Promise.all([generateGRPCFixtures(), generateResolverTypes()]);
+    await Promise.all([/*generateGRPCFixtures(),*/ generateResolverTypes()]);
 
     // Run the TypeScript build in watch mode. We're using the tsc CLI
     // directly rather than a tool like Gulp and friends, because those
@@ -64,13 +64,13 @@ async function init() {
         process.exit(1);
     });
 
-    const debouncedGenGRPC = debounce(generateGRPCFixtures, 60);
+    // const debouncedGenGRPC = debounce(generateGRPCFixtures, 60);
     const debouncedGenResolver = debounce(generateResolverTypes, 60);
 
     chokidar
         .watch(
             [
-                'protosets/app.protoset', // for gRPC fixtues
+                // 'protosets/app.protoset', // for gRPC fixtues
                 'src/**/*.ts', // for codegen of schema >> TS types
             ],
             // We ran an initial build, no need to execute again
@@ -79,24 +79,24 @@ async function init() {
         .on('all', (modificationType, filename) => {
             const ext = extname(filename);
             switch (true) {
-                case ext === '.protoset':
-                    debouncedGenGRPC();
+                // case ext === '.protoset':
+                // debouncedGenGRPC();
                 case ext === '.ts':
                     debouncedGenResolver();
             }
         });
 }
 
-const generateGRPCFixtures = async () => {
-    console.log(chalk`{green gRPC}: Running Code Generation`);
-    try {
-        await invokeProtoc();
-        console.log(chalk`{green gRPC}: Code Generation completed`);
-    } catch (err) {
-        console.error(chalk`{red gRPC}: Code Generation failed`);
-        console.error(err.stderr);
-    }
-};
+// const generateGRPCFixtures = async () => {
+//     console.log(chalk`{green gRPC}: Running Code Generation`);
+//     try {
+//         await invokeProtoc();
+//         console.log(chalk`{green gRPC}: Code Generation completed`);
+//     } catch (err) {
+//         console.error(chalk`{red gRPC}: Code Generation failed`);
+//         console.error(err.stderr);
+//     }
+// };
 
 const generateResolverTypes = async () => {
     console.log(chalk`{yellow gql-gen}: Running GraphQL Code Generation`);

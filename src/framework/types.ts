@@ -1,8 +1,8 @@
-import { SchemaDelegationContext } from './framework/schemaDelegator';
+import { SchemaDelegationContext } from './schemaDelegator';
 
 export type GraphQLContext = Readonly<
     {
-        legacyToken?: string;
+        monolithToken?: string;
         currency?: string;
         store?: string;
         requestHeaders: Record<string, unknown>;

@@ -13,7 +13,7 @@
   },
   "scripts": {
     "//": "** See docs for all scripts in docs/DEVELOPMENT.md** ",
-    "build": "npm run clean && node scripts/protogen.js && gql-gen && tsc",
+    "build": "npm run clean && gql-gen && tsc",
     "start": "bin/magento-graphql",
     "test": "eslint '*/**/*.{js,ts}' && prettier --list-different $(head -1 prettier-globs) && jest",
     "watch": "scripts/dev.js",
@@ -32,6 +32,7 @@
     "graphql-tag": "^2.10.3",
     "graphql-tools": "^6.2.1",
     "grpc": "^1.24.2",
+    "meow": "^7.1.1",
     "node-fetch": "^2.6.0",
     "openwhisk": "^3.21.1"
   },

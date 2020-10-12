@@ -2,6 +2,7 @@ overwrite: true
 schema:
     - './src/**/*.ts':
           noRequire: true
+    - './src/**/*.graphql'
     - '!**/__tests__/*'
 generates:
     generated/graphql.d.ts:

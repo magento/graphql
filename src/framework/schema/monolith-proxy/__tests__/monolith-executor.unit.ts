@@ -31,7 +31,7 @@ test('executor passes monolith-specific headers from context', async () => {
     await executor({
         document: SAMPLE_QUERY,
         context: {
-            legacyToken: 'token123',
+            monolithToken: 'token123',
             currency: 'USD',
             store: '1',
         },
@@ -69,7 +69,7 @@ test('executor excludes undefined and missing monolith-specific header values', 
     await executor({
         document: SAMPLE_QUERY,
         context: {
-            legacyToken: 'token123',
+            monolithToken: 'token123',
             store: undefined,
             // excluded currency field
         },

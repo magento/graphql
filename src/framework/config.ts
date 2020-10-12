@@ -1,62 +1,89 @@
-export type ConfigDescriptor = {
-    docs: string;
-    default?: unknown;
+/* eslint-disable no-process-env */
+
+/**
+ * @summary All configuration values that can be supplied to the application
+ */
+const frameworkConfig = {
+    HOST: {
+        docs: 'Host for the GraphQL server to listen on',
+        default: '0.0.0.0',
+    },
+    PORT: {
+        docs: 'Port for GraphQL server to listen on',
+        default: 80,
+    },
+    LEGACY_GRAPHQL_URL: {
+        docs:
+            'Absolute URL of Magento Core GraphQL endpoint. Used to proxy requests for parts of the schema not yet implemented',
+        default: 'https://store.test/graphql',
+    },
+    PREMIUM_SEARCH_GRAPHQL_URL: {
+        docs: 'Absolute URL of Premium Search GraphQL endpoint',
+        default: 'https://search-host.test/graphql',
+    },
+    PREMIUM_SEARCH_API_KEY: {
+        docs: 'Key passed to Premium Search using "X-API-KEY" header',
+        default: 'api-key',
+    },
 };
 
-export type ConfigDefs<K extends string> = Record<K, ConfigDescriptor>;
-
-export type ConfigReader<TConfigNames extends string> = {
-    get(key: TConfigNames): ConfigReaderTypes;
-    has(key: TConfigNames): boolean;
-};
-
-export type ConfigReaderTypes = {
-    asString: () => string;
-    asNumber: () => number;
-    asBoolean: () => boolean;
-    asStringArray: () => string[];
-};
+export function getFrameworkConfig() {
+    return new ConfigReader(frameworkConfig);
+}
 
 /**
  * @summary Constructs a type-safe configuration reader that
  *          reads values from environment variables.
  */
-export function createEnvConfigReader<TConfigNames extends string>(
-    config: Record<TConfigNames, ConfigDescriptor>,
-): ConfigReader<TConfigNames> {
-    // Object.prototype.hasOwnProperty in case we get a config created
-    // with `Object.create(null)` (yay ES5)
-    const hasOwnProp = Object.prototype.hasOwnProperty.bind(config);
-    /* eslint-disable no-process-env */
-    const get = (key: TConfigNames) =>
-        process.env.hasOwnProperty(key)
-            ? process.env[key]
-            : config[key].default;
-    /* eslint-enable no-process-env */
+export class ConfigReader<TConfigNames extends string> {
+    constructor(private config: ConfigDefs<TConfigNames>) {}
 
-    return {
-        get: (key: TConfigNames) => createCasters(key, get(key)),
-        has: (key: TConfigNames) => hasOwnProp(key),
-    };
+    get(key: TConfigNames) {
+        const value = this.has(key)
+            ? process.env[key]
+            : this.config[key].default;
+        return new ConfigValueWrapper(key, value);
+    }
+
+    has(key: TConfigNames) {
+        return Object.prototype.hasOwnProperty.call(process.env, key);
+    }
+
+    describe(key: TConfigNames) {
+        return this.config[key].docs;
+    }
+
+    keys() {
+        return Object.keys(this.config) as TConfigNames[];
+    }
 }
 
-/**
- * @summary Casts configuration values to their requested types
- */
-export function createCasters(key: string, value: unknown): ConfigReaderTypes {
-    const cleanError = <T>(fn: () => T) => () => {
+class ConfigValueWrapper {
+    constructor(private key: string, private value: unknown) {}
+
+    private wrapPossibleError<TReturnType>(fn: () => TReturnType) {
         try {
             return fn();
-        } catch (err) {
-            throw new Error(`Failed parsing configuration value: "${key}"`);
+        } catch {
+            throw new Error(`Failed parsing of config value for "${this.key}"`);
         }
-    };
-    return {
-        asString: cleanError(() => String(value)),
-        asNumber: cleanError(() => Number(value)),
-        asBoolean: cleanError(() => !!value),
-        asStringArray: cleanError(() =>
-            (value as string).split(',').map(s => s.trim()),
-        ),
-    };
+    }
+
+    asString() {
+        return this.wrapPossibleError(() => String(this.value));
+    }
+
+    asNumber() {
+        return this.wrapPossibleError(() => Number(this.value));
+    }
+
+    asBoolean() {
+        return this.wrapPossibleError(() => !!this.value);
+    }
 }
+
+type ConfigDescriptor = {
+    docs: string;
+    default?: unknown;
+};
+export type ConfigDefs<K extends string> = Record<K, ConfigDescriptor>;

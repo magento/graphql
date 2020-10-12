@@ -1,7 +1,0 @@
-{
-    "private": true,
-    "name": "@magento/magento-graphql-premium-search",
-    "peerDependencies": {
-        "@magento/magento-graphql-legacy-proxy": "0.0.0-unpublished"
-    }
-}

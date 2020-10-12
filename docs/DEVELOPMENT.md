@@ -5,7 +5,8 @@
 1. Clone the repository
 2. Run `npm install` to fetch dependencies
 3. Run `npm run build` to compile the application
-4. Run `npm run start` to start the server. You'll be prompted with instructions to add the necessary config
+4. Run `bin/magento-graphql config > .env` to generate a default configuration in `.env`
+5. Run `source .env && npm run start` to start the server
 
 ## Development Scripts
 

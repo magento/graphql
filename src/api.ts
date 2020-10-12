@@ -1,3 +1,2 @@
-export { GraphQLContext } from './types';
-export { createExtension } from './framework/localExtensions';
+export { GraphQLContext } from './framework/types';
 export { prepareForServer } from './framework/prepareForServer';

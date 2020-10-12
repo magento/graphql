@@ -2,7 +2,7 @@ import fastify, { FastifyRequest } from 'fastify';
 import fastifyGQL from 'fastify-gql';
 import { assert } from './assert';
 import { GraphQLSchema } from 'graphql';
-import { ContextFn } from './types';
+import { ContextFn } from './framework/types';
 import fastifyCORS from 'fastify-cors';
 
 type MagentoGraphQLServerOpts = {

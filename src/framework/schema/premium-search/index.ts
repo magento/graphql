@@ -1,4 +1,4 @@
-import { createExtension } from '../../api';
+import { getFrameworkConfig } from '../../config';
 import gql from 'graphql-tag';
 import {
     introspectSchema,
@@ -16,21 +16,13 @@ import {
 import { createSearchExecutor } from './executor';
 import { GraphQLContext } from '../../types';
 import {
-    IResolvers,
+    Resolvers,
     Products,
     ProductInterface,
-} from '../../../generated/graphql';
+} from '../../../../generated/graphql';
 
-const extensionConfig = {
-    PREMIUM_SEARCH_GRAPHQL_URL: {
-        docs: 'Absolute URL of Premium Search GraphQL endpoint',
-    },
-    PREMIUM_SEARCH_API_KEY: {
-        docs: 'Key passed to Premium Search using "X-API-KEY" header',
-    },
-};
-
-export default createExtension(extensionConfig, async (config, api) => {
+export async function createPremiumSearchSchema() {
+    const config = getFrameworkConfig();
     const searchURL = config.get('PREMIUM_SEARCH_GRAPHQL_URL').asString();
     const apiKey = config.get('PREMIUM_SEARCH_API_KEY').asString();
     const executor = createSearchExecutor(searchURL, apiKey);
@@ -52,7 +44,7 @@ export default createExtension(extensionConfig, async (config, api) => {
         }
     `;
 
-    const resolvers: IResolvers<GraphQLContext> = {
+    const resolvers: Resolvers<GraphQLContext> = {
         // Note: This stitching resolver can go away entirely if search starts returning
         // a `ProductInterface` subset, instead of the `ProductItem` type
         ProductSearchItem: {
@@ -112,7 +104,7 @@ export default createExtension(extensionConfig, async (config, api) => {
         },
     };
 
-    api.stitchSubschema({
+    const schemaConfig = {
         schema: searchSchema,
         executor,
         transforms: [
@@ -141,7 +133,7 @@ export default createExtension(extensionConfig, async (config, api) => {
                 }
             }),
         ],
-    })
-        .addTypeDefs(typeDefs)
-        .addResolvers(resolvers);
-});
+    };
+
+    return { schema: schemaConfig, resolvers, typeDefs };
+}

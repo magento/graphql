@@ -4,19 +4,19 @@ The `@magento/graphql` package includes:
 
 -   A CLI app that runs the GraphQL server via HTTP
 -   A programmatic API to run the GraphQL server
--   APIs for developers to extend the graph
+-   APIs for Adobe/Magento employees to extend the Graph
 
 ## 🚌 Repository Tour
 
 ### `src`
 
--   [`src/api.ts`](../src/api.ts): Entry point for programmatic usage. Exposes APIs for extension developers, and some other advanced use-cases
+-   [`src/api.ts`](../src/api.ts): Entry point for programmatic usage
 
 -   [`src/cli.ts`](../src/cli.ts): Implementation of CLI app
 
--   [`src/framework`](../src/framework): Framework code, primarily used to run and coordinate work between extensions and abstract away handling of configuration
+-   [`src/framework`](../src/framework): Magento GraphQL framework (used by CLI and Programmatic API)
 
--   [`src/extensions`](../src/extensions): Official Magento extensions. Structured like a monorepo, but packages are not published independently to simplify versioning
+-   [`src/schema`](../src/schema): Official Magento GraphQL schema definitions/implementations.
 
 -   [`src/server.ts`](../src/server.ts): Takes the GraphQL schema created via running all extensions, and exposes it over HTTP using [`Fastify`](https://www.fastify.io/)
 
@@ -24,9 +24,9 @@ The `@magento/graphql` package includes:
 
 -   [`scripts/dev.js`](../scripts/dev.js): Incremental builds during local development. See [`DEVELOPMENT.md`](DEVELOPMENT.md)
 
--   [`scripts/protogen.js`](../scripts/protogen.js): Executed automatically during the build process. Integrates with the [Protocol Buffers](https://developers.google.com/protocol-buffers) compiler
+-   [`scripts/protogen.js`](../scripts/protogen.js): Executed automatically during the build process. Integrates with the [Protocol Buffers](https://developers.google.com/protocol-buffers) compiler. Used for gRPC integration
 
--   [`scripts/update-legacy-schema.js`](../scripts/update-legacy-schema.js): Fetches and serializes a copy of the GraphQL schema from a Magento 2 store, and writes it to disk. See the [`legacy-proxy`](../src/extensions/legacy-proxy/README.md) extension for more info
+-   [`scripts/update-monolith-schema.js`](../scripts/update-monolith-schema.js): Fetches and serializes a copy of the GraphQL schema from a Magento 2 store, and writes it to disk. See the [`monolith-proxy`](../src/framework/schema/monolith-proxy) schema for more info
 
 ### `bin`
 

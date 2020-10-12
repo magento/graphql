@@ -2,9 +2,6 @@ FROM node:12.14.1-buster-slim as builder
 
 WORKDIR /app
 
-RUN mkdir -p sites/grpc
-RUN mkdir -p generated
-
 # Adding depedencies
 COPY package.json .
 COPY package-lock.json .

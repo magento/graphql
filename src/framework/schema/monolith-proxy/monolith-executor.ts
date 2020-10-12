@@ -5,7 +5,7 @@ import { default as nodeFetch } from 'node-fetch';
 
 /**
  * @summary Create a custom "executor" for wrapSchema to use
- *          when calling the Monolith/Legacy Magento GraphQL API (PHP).
+ *          when calling the monolith Magento GraphQL API (PHP).
  *          Ensures required Magento headers are passed along
  *
  * @see https://devdocs.magento.com/guides/v2.3/graphql/send-request.html#request-headers
@@ -25,7 +25,7 @@ export function createMonolithExecutor(
             Object.assign(
                 headers,
                 filterUndefinedEntries({
-                    Authorization: `Bearer ${context.legacyToken}`,
+                    Authorization: `Bearer ${context.monolithToken}`,
                     'Content-Currency': context.currency,
                     Store: context.store,
                 }),
