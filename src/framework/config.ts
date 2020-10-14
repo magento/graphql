@@ -25,6 +25,10 @@ const frameworkConfig = {
         docs: 'Key passed to Premium Search using "X-API-KEY" header',
         default: 'api-key',
     },
+    ENABLE_PREMIUM_SEARCH: {
+        docs: 'Enables the Magento Premium Search integration',
+        default: 'false',
+    },
 };
 
 export function getFrameworkConfig() {
@@ -78,7 +82,7 @@ class ConfigValueWrapper {
     }
 
     asBoolean() {
-        return this.wrapPossibleError(() => !!this.value);
+        return this.wrapPossibleError(() => this.value === 'true');
     }
 }
 

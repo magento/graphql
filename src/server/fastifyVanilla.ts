@@ -1,8 +1,8 @@
 import fastify, { FastifyRequest } from 'fastify';
 import fastifyGQL from 'fastify-gql';
-import { assert } from './assert';
+import assert from 'assert';
 import { GraphQLSchema } from 'graphql';
-import { ContextFn } from './framework/types';
+import { ContextFn } from '../framework';
 import fastifyCORS from 'fastify-cors';
 
 type MagentoGraphQLServerOpts = {
@@ -13,10 +13,8 @@ type MagentoGraphQLServerOpts = {
 };
 
 /**
- * @summary Fastify-based implementation of the Magento
- *          GraphQL server. Intentionally minimal to allow
- *          us to shift if we decide to go back to a more
- *          typical setup like express + apollo-server-express
+ * @summary fastify + fastify-gql implementation of the Magento
+ *          GraphQL server.
  */
 export async function start({
     host,

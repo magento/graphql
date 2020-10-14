@@ -3,22 +3,22 @@
 The `@magento/graphql` package includes:
 
 -   A CLI app that runs the GraphQL server via HTTP
--   A programmatic API to run the GraphQL server
--   APIs for Adobe/Magento employees to extend the Graph
+-   A lower-level programmatic API to run the GraphQL server
+-   APIs for Adobe/Magento employees to extend the Graph (3rd party extensibility in the future)
 
 ## 🚌 Repository Tour
 
 ### `src`
 
--   [`src/api.ts`](../src/api.ts): Entry point for programmatic usage
+-   [`src/index.ts`](../src/index.ts): Entry point for programmatic usage
 
--   [`src/cli.ts`](../src/cli.ts): Implementation of CLI app
+-   [`src/cli/index.ts`](../src/cli/index.ts): Implementation of CLI app
 
 -   [`src/framework`](../src/framework): Magento GraphQL framework (used by CLI and Programmatic API)
 
--   [`src/schema`](../src/schema): Official Magento GraphQL schema definitions/implementations.
+-   [`src/framework/schema`](../src/framework/schema): Official Magento GraphQL schema definitions/implementations.
 
--   [`src/server.ts`](../src/server.ts): Takes the GraphQL schema created via running all extensions, and exposes it over HTTP using [`Fastify`](https://www.fastify.io/)
+-   [`src/server`](../src/server): Bindings for various node.js HTTP servers (currently `express` and `fastify`)
 
 ### `scripts`
 
@@ -30,4 +30,4 @@ The `@magento/graphql` package includes:
 
 ### `bin`
 
--   [`bin/magento-graphql`](../bin/magento-graphql): Minimal entry point for the CLI app. Thin shell wrapper around the execution of `src/cli.ts`.
+-   [`bin/magento-graphql`](../bin/magento-graphql): Minimal entry point for the CLI app. Thin shell wrapper around the execution of `src/cli`.

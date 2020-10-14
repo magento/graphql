@@ -8,10 +8,8 @@ import { buildFrameworkSchema } from './schema';
 export async function prepareForServer() {
     const gateway = await buildFrameworkSchema();
 
-    const context = contextBuilder({
-        schema: gateway,
-        extensions: [],
-    });
-
-    return { schema: gateway, context };
+    return {
+        schema: await buildFrameworkSchema(),
+        context: contextBuilder({ schema: gateway }),
+    };
 }

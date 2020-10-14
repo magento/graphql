@@ -1,13 +1,13 @@
-import { assert } from '../../../assert';
+import assert from 'assert';
 import { createMonolithExecutor } from './monolith-executor';
 import { introspectSchema } from 'graphql-tools';
 import { getFrameworkConfig } from '../../config';
 import { isInputObjectType } from 'graphql';
 
 /**
- * @summary Builds a remote schema that proxies
- *          requests back to the Magento PHP
- *          implementation of GraphQL. This is done
+ * @summary Builds pieces needed for a remote schema
+ *          that proxies requests back to the Magento
+ *          PHP implementation of GraphQL. This is done
  *          to allow a gradual migration off the
  *          monolith GraphQL API.
  *
@@ -51,6 +51,8 @@ export async function createMonolithProxySchema() {
     );
 
     const attrFilterFields = attrFilterInput.getFields();
+    // TODO: This won't be necessary anymore when this PR lands:
+    // https://github.com/magento/magento2/pull/28316
     assert(
         Object.prototype.hasOwnProperty.call(attrFilterFields, 'sku'),
         'Could not find required field "ProductAttributeFilterInput.sku" in PHP application schema. Make sure your store has the "sku" attribute exposed for filtering: https://devdocs.magento.com/guides/v2.4/graphql/custom-filters.html',

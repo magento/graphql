@@ -1,28 +1,31 @@
 import { start } from '../server';
 import meow from 'meow';
 import chalk from 'chalk';
-import { prepareForServer } from '../api';
-import { getFrameworkConfig } from '../framework/config';
+import { prepareForServer, getFrameworkConfig } from '../framework';
+import { printSchema } from 'graphql';
 
 /**
  * @summary Entry Point to the CLI
  */
 export async function run() {
     const cli = meow(`
-        Usage
-            $ magento-graphql run
-            $ magento-graphql config
+        Usage: magento-graphql [Command]
          
+        Commands:
+          start   Start the GraphQL server
+          config  Print default configuration
+          schema  Print GraphQL schema
+
         Options:
-            --help     Show this screen
-            --version  Show version
+          --help     Show this screen
+          --version  Show version
     `);
 
     const [command] = cli.input as [keyof typeof commands];
 
     if (!command) {
-        // Default to running the server is no command is provided
-        commands.run();
+        // Default to starting the server if no command is provided
+        commands.start();
         return;
     }
 
@@ -38,7 +41,10 @@ export async function run() {
 }
 
 const commands = {
-    async run() {
+    /**
+     * @summary Start the HTTP server, and bind /graphql to the GraphQL engine
+     */
+    async start() {
         const config = getFrameworkConfig();
         const { schema, context } = await prepareForServer();
 
@@ -50,14 +56,29 @@ const commands = {
         });
     },
 
+    /**
+     * @summary Generate a list of all GraphQL server options,
+     *          and write to stdout. Uses shell `export` syntax
+     *          as a convenience for *nix/WSL users
+     */
     config() {
         const config = getFrameworkConfig();
 
         let lines = config.keys().map(key => {
             const value = config.get(key).asString();
-            return `# ${config.describe(key)}\nexport ${key}="${value}"`;
+            return `# ${config.describe(key)}\nexport ${key}=${value}`;
         });
 
         console.log(lines.join('\n'));
+    },
+
+    /**
+     * @summary Generate a definition of the GraphQL
+     *          schema using the official GraphQL IDL,
+     *          and write to stdout
+     */
+    async schema() {
+        const { schema } = await prepareForServer();
+        console.log(printSchema(schema));
     },
 };

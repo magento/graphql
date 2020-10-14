@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "description": "Decoupled GraphQL Server for Magento 2 stores",
-  "main": "dist/api.js",
+  "main": "dist/index.js",
   "bin": {
     "magento-graphql": "bin/magento-graphql"
   },
@@ -23,7 +23,6 @@
   "author": "Adobe Inc.",
   "license": "UNLICENSED",
   "dependencies": {
-    "@hapi/topo": "^5.0.0",
     "fastify": "^2.12.1",
     "fastify-cors": "^3.0.2",
     "fastify-gql": "^3.0.7",
@@ -33,8 +32,7 @@
     "graphql-tools": "^6.2.1",
     "grpc": "^1.24.2",
     "meow": "^7.1.1",
-    "node-fetch": "^2.6.0",
-    "openwhisk": "^3.21.1"
+    "node-fetch": "^2.6.0"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^1.17.8",
@@ -42,7 +40,7 @@
     "@graphql-codegen/typescript-resolvers": "^1.17.9",
     "@types/google-protobuf": "^3.7.2",
     "@types/jest": "^25.1.4",
-    "@types/node": "^12.12.14",
+    "@types/node": "^12.12.67",
     "@types/node-fetch": "^2.5.4",
     "@types/swagger-schema-official": "^2.0.20",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
