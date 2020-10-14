@@ -10,7 +10,7 @@ const frameworkConfig = {
     },
     PORT: {
         docs: 'Port for GraphQL server to listen on',
-        default: 80,
+        default: 8008,
     },
     LEGACY_GRAPHQL_URL: {
         docs:

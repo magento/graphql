@@ -58,15 +58,15 @@ const commands = {
 
     /**
      * @summary Generate a list of all GraphQL server options,
-     *          and write to stdout. Uses shell `export` syntax
-     *          as a convenience for *nix/WSL users
+     *          and write to stdout. Uses .env format used by
+     *          many tools, include Docker
      */
     config() {
         const config = getFrameworkConfig();
 
         let lines = config.keys().map(key => {
             const value = config.get(key).asString();
-            return `# ${config.describe(key)}\nexport ${key}=${value}`;
+            return `# ${config.describe(key)}\n${key}=${value}`;
         });
 
         console.log(lines.join('\n'));

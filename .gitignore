@@ -5,3 +5,4 @@ dist
 protosets/*
 .idea
 *.env
+!.env

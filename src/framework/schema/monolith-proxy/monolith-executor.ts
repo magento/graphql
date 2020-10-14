@@ -32,6 +32,8 @@ export function createMonolithExecutor(
             );
         }
 
+        // TODO: Re-write queries (not mutations) to GET where possible,
+        //       to hit varnish for some warm cache wins
         const result = await fetch(monolithGraphQLUrl, {
             method: 'POST',
             headers,

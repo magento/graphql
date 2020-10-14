@@ -10,5 +10,8 @@ Check out the [`Development`](docs/DEVELOPMENT.md) document to get started.
 
 -   [Why?](docs/WHY.md)
 -   [Development](docs/DEVELOPMENT.md)
+-   [Configuration](docs/CONFIGURATION.md)
 -   [Repository Overview](docs/REPOSITORY_OVERVIEW.md)
 -   [Versioning](docs/VERSIONING.md)
+-   [Running with Docker](docs/DOCKER.md)
+-   [Build Scripts](docs/NPM_SCRIPTS.md)

@@ -51,7 +51,7 @@ export async function createMonolithProxySchema() {
     );
 
     const attrFilterFields = attrFilterInput.getFields();
-    // TODO: This won't be necessary anymore when this PR lands:
+    // TODO: This check won't be necessary anymore when this PR lands and we update our delegation:
     // https://github.com/magento/magento2/pull/28316
     assert(
         Object.prototype.hasOwnProperty.call(attrFilterFields, 'sku'),
