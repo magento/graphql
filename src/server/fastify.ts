@@ -1,5 +1,6 @@
 import fastify, { FastifyRequest } from 'fastify';
 import fastifyGQL from 'fastify-gql';
+import { ApolloServer } from 'apollo-server-fastify';
 import assert from 'assert';
 import { GraphQLSchema } from 'graphql';
 import { ContextFn } from '../framework';
@@ -10,6 +11,7 @@ type MagentoGraphQLServerOpts = {
     port: number;
     schema: GraphQLSchema;
     context: ContextFn;
+    useUnsupportedApollo?: boolean;
 };
 
 /**
@@ -21,16 +23,22 @@ export async function start({
     port,
     schema,
     context,
+    useUnsupportedApollo,
 }: MagentoGraphQLServerOpts) {
     const fastifyServer = fastify();
 
-    fastifyServer.register(fastifyGQL, {
-        schema,
-        graphiql: 'playground',
-        path: '/graphql',
-        jit: 10,
-        context: (req: FastifyRequest) => context(req.headers),
-    });
+    if (useUnsupportedApollo) {
+        const apollo = new ApolloServer({ schema });
+        fastifyServer.register(apollo.createHandler());
+    } else {
+        fastifyServer.register(fastifyGQL, {
+            schema,
+            graphiql: 'playground',
+            path: '/graphql',
+            jit: 10,
+            context: (req: FastifyRequest) => context(req.headers),
+        });
+    }
 
     // TODO: This should never go to prod with a blanket
     // whitelist

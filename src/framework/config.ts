@@ -29,6 +29,11 @@ const frameworkConfig = {
         docs: 'Enables the Magento Premium Search integration',
         default: 'false',
     },
+    UNSUPPORTED_APOLLO_SERVER: {
+        docs:
+            'Use apollo-server-fastify instead of fastify-gql. Mainly used to validate our early performance research',
+        default: 'false',
+    },
 };
 
 export function getFrameworkConfig() {

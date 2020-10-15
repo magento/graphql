@@ -1,1 +1,1 @@
-export { start } from './fastifyVanilla';
+export { start } from './fastify';

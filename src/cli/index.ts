@@ -53,6 +53,9 @@ const commands = {
             port: config.get('PORT').asNumber(),
             schema,
             context,
+            useUnsupportedApollo: config
+                .get('UNSUPPORTED_APOLLO_SERVER')
+                .asBoolean(),
         });
     },
 
