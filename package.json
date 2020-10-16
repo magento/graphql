@@ -19,7 +19,7 @@
     "watch": "scripts/dev.js",
     "clean": "rm -rf dist generated",
     "format": "prettier --write $(head -1 prettier-globs)",
-    "update-config": "bin/magento-graphql config > .env"
+    "update-config": "bin/magento-graphql config > sample.env"
   },
   "author": "Adobe Inc.",
   "license": "UNLICENSED",

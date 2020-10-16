@@ -4,4 +4,4 @@ generated
 dist
 .idea
 *.env
-!.env
+!sample.env

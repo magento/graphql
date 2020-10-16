@@ -52,7 +52,7 @@ Runs a full, clean build of `@magento/graphql`, then runs a file-watcher to hand
 
 ### update-config
 
-Updates the sample `.env` in the root of the project with default configuration values. Includes description of all configuration options.
+Updates the `sample.env` file in the root of the project with default configuration values. Includes description of all configuration options.
 
 This should be run whenever new configuration values are added to [`src/framework/config.ts`](../src/framework/config.ts)
 
