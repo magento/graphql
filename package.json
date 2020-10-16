@@ -13,7 +13,7 @@
   },
   "scripts": {
     "//": "** See descriptions for all scripts in docs/NPM_SCRIPTS.md** ",
-    "build": "npm run clean && gql-gen && tsc",
+    "build": "npm run clean && node scripts/protogen.js && gql-gen && tsc",
     "start": "bin/magento-graphql",
     "test": "eslint '*/**/*.{js,ts}' && prettier --list-different $(head -1 prettier-globs) && jest",
     "watch": "scripts/dev.js",
@@ -25,10 +25,10 @@
   "license": "UNLICENSED",
   "dependencies": {
     "apollo-server-fastify": "^2.18.2",
+    "chalk": "^4.1.0",
     "fastify": "^2.12.1",
     "fastify-cors": "^3.0.2",
     "fastify-gql": "^3.0.7",
-    "google-protobuf": "^3.11.2",
     "graphql": "^14.6.0",
     "graphql-tag": "^2.10.3",
     "graphql-tools": "^6.2.1",
@@ -40,14 +40,12 @@
     "@graphql-codegen/cli": "^1.17.8",
     "@graphql-codegen/typescript": "^1.17.9",
     "@graphql-codegen/typescript-resolvers": "^1.17.9",
-    "@types/google-protobuf": "^3.7.2",
+    "@types/google-protobuf": "^3.7.3",
     "@types/jest": "^25.1.4",
     "@types/node": "^12.12.67",
     "@types/node-fetch": "^2.5.4",
-    "@types/swagger-schema-official": "^2.0.20",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
     "@typescript-eslint/parser": "^2.24.0",
-    "chalk": "^3.0.0",
     "chokidar": "^3.3.1",
     "debounce": "^1.2.0",
     "eslint": "^6.8.0",
@@ -55,11 +53,10 @@
     "grpc-tools": "^1.8.0",
     "jest": "^25.1.0",
     "prettier": "^1.19.1",
-    "protobufjs": "^6.8.8",
     "rimraf": "^3.0.1",
     "strip-ansi": "^6.0.0",
     "ts-jest": "^25.0.0",
     "ts-protoc-gen": "^0.12.0",
-    "typescript": "^3.7.3"
+    "typescript": "^3.9.7"
   }
 }

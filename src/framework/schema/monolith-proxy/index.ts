@@ -30,7 +30,7 @@ import { isInputObjectType } from 'graphql';
  */
 export async function createMonolithProxySchema() {
     const config = getFrameworkConfig();
-    const monolithURL = config.get('LEGACY_GRAPHQL_URL').asString();
+    const monolithURL = config.get('MONOLITH_GRAPHQL_URL').asString();
     const executor = createMonolithExecutor(monolithURL);
     let schema;
 
@@ -39,7 +39,7 @@ export async function createMonolithProxySchema() {
     } catch (err) {
         throw new Error(
             `Failed introspecting remote Magento schema at "${monolithURL}". ` +
-                'Make sure that the LEGACY_GRAPHQL_URL variable is set to ' +
+                'Make sure that the MONOLITH_GRAPHQL_URL variable is set to ' +
                 'the correct value for your Magento instance',
         );
     }

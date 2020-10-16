@@ -10,24 +10,36 @@ const frameworkConfig = {
     },
     PORT: {
         docs: 'Port for GraphQL server to listen on',
-        default: 8008,
+        default: '8008',
     },
-    LEGACY_GRAPHQL_URL: {
+    MONOLITH_GRAPHQL_URL: {
         docs:
             'Absolute URL of Magento Core GraphQL endpoint. Used to proxy requests for parts of the schema not yet implemented',
         default: 'https://store.test/graphql',
     },
-    PREMIUM_SEARCH_GRAPHQL_URL: {
-        docs: 'Absolute URL of Premium Search GraphQL endpoint',
-        default: 'https://search-host.test/graphql',
+    ENABLE_CATALOG_STOREFRONT: {
+        docs: 'Enable the Catalog Storefront integration',
+        default: 'false',
     },
-    PREMIUM_SEARCH_API_KEY: {
-        docs: 'Key passed to Premium Search using "X-API-KEY" header',
-        default: 'api-key',
+    CATALOG_STOREFRONT_HOST: {
+        docs: 'Host of the Catalog Storefront gRPC API',
+        default: 'catalog-storefront.test',
+    },
+    CATALOG_STOREFRONT_PORT: {
+        docs: 'Port of the Catalog Storefront gRPC API',
+        default: '9001',
     },
     ENABLE_PREMIUM_SEARCH: {
         docs: 'Enables the Magento Premium Search integration',
         default: 'false',
+    },
+    PREMIUM_SEARCH_GRAPHQL_URL: {
+        docs: 'Absolute URL of Premium Search GraphQL endpoint',
+        default: 'https://premium-search.test/graphql',
+    },
+    PREMIUM_SEARCH_API_KEY: {
+        docs: 'Key passed to Premium Search using "X-API-KEY" header',
+        default: 'api-key',
     },
     UNSUPPORTED_APOLLO_SERVER: {
         docs:
@@ -60,6 +72,10 @@ export class ConfigReader<TConfigNames extends string> {
 
     describe(key: TConfigNames) {
         return this.config[key].docs;
+    }
+
+    defaultValue(key: TConfigNames) {
+        return new ConfigValueWrapper(key, this.config[key].default);
     }
 
     keys() {

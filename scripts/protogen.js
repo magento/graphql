@@ -1,4 +1,4 @@
-const { mkdir } = require('fs').promises;
+const { mkdir, readdir } = require('fs').promises;
 const { join } = require('path');
 const execa = require('execa');
 
@@ -16,6 +16,11 @@ const tsPluginPath = join(
 );
 
 const invokeProtoc = (module.exports.invokeProtoc = async () => {
+    const protoDir = join(__dirname, '../protobufs');
+    const protoFiles = (await readdir(protoDir)).filter(v =>
+        v.endsWith('.proto'),
+    );
+
     const args = [
         `--plugin=protoc-gen-grpc=${jsPluginPath}`,
         `--plugin=protoc-gen-ts=${tsPluginPath}`,
@@ -25,8 +30,8 @@ const invokeProtoc = (module.exports.invokeProtoc = async () => {
         `--js_out=namespace_prefix=proto,import_style=commonjs_strict,binary:${GEN_DIR}`,
         `--ts_out=service=grpc-node:${GEN_DIR}`,
         `--grpc_out=${GEN_DIR}`,
-        `--proto_path=/Users/andrewlevine/magento-graphql/protosets`,
-        'magento.proto',
+        `--proto_path=/Users/andrewlevine/magento-graphql/protobufs`,
+        ...protoFiles,
     ];
 
     await mkdir(GEN_DIR, { recursive: true });

@@ -6,10 +6,8 @@ import { buildFrameworkSchema } from './schema';
  *          function that can be used with any node HTTP library
  */
 export async function prepareForServer() {
-    const gateway = await buildFrameworkSchema();
+    const schema = await buildFrameworkSchema();
+    const context = contextBuilder({ schema });
 
-    return {
-        schema: await buildFrameworkSchema(),
-        context: contextBuilder({ schema: gateway }),
-    };
+    return { schema, context };
 }

@@ -1,26 +1,37 @@
-import { stitchSchemas, SubschemaConfig, IResolvers } from 'graphql-tools';
+import { stitchSchemas, SubschemaConfig } from 'graphql-tools';
 import { GraphQLSchema, DocumentNode } from 'graphql';
 import { createPremiumSearchSchema } from './premium-search';
 import { createMonolithProxySchema } from './monolith-proxy';
+import { createCatalogSchema } from './catalog';
 import { getFrameworkConfig } from '../config';
+import { Resolvers } from '../../../generated/graphql';
 
 export async function buildFrameworkSchema() {
-    const monolithProxy = await createMonolithProxySchema();
-    const stitchingConfig = {
-        subschemas: [monolithProxy] as (SubschemaConfig | GraphQLSchema)[],
-        resolvers: [] as IResolvers[],
-        typeDefs: [] as (DocumentNode | string)[],
-        mergeTypes: true,
-    };
+    const subschemas: (SubschemaConfig | GraphQLSchema)[] = [
+        await createMonolithProxySchema(),
+    ];
+    const resolvers: Resolvers[] = [];
+    const typeDefs: DocumentNode[] = [];
     const config = getFrameworkConfig();
+
+    if (config.get('ENABLE_CATALOG_STOREFRONT').asBoolean()) {
+        const catalog = await createCatalogSchema();
+        resolvers.push(catalog.resolvers);
+        typeDefs.push(catalog.typeDefs);
+    }
 
     if (config.get('ENABLE_PREMIUM_SEARCH').asBoolean()) {
         const search = await createPremiumSearchSchema();
-        stitchingConfig.subschemas.push(search.schema);
-        // @ts-ignore
-        stitchingConfig.resolvers.push(search.resolvers);
-        stitchingConfig.typeDefs.push(search.typeDefs);
+        subschemas.push(search.schema);
+        resolvers.push(search.resolvers);
+        typeDefs.push(search.typeDefs);
     }
 
-    return stitchSchemas(stitchingConfig);
+    return stitchSchemas({
+        mergeTypes: true,
+        subschemas,
+        // @ts-ignore
+        resolvers,
+        typeDefs,
+    });
 }

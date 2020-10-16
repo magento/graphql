@@ -68,8 +68,8 @@ const commands = {
         const config = getFrameworkConfig();
 
         let lines = config.keys().map(key => {
-            const value = config.get(key).asString();
-            return `# ${config.describe(key)}\n${key}=${value}`;
+            const defaultValue = config.defaultValue(key).asString();
+            return `# ${config.describe(key)}\n${key}=${defaultValue}`;
         });
 
         console.log(lines.join('\n'));
