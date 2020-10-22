@@ -1,13 +1,16 @@
 import { GraphQLSchema } from 'graphql';
 import { GraphQLContext, ContextFn } from './types';
 import { SchemaDelegator } from './schemaDelegator';
+import { Logger } from './logger';
 
 type ContextBuilderInput = {
     schema: GraphQLSchema;
+    logger: Logger;
 };
 
 /**
- * @summary Builds a new instance of the GraphQLContext
+ * @summary Builds a new instance of the GraphQLContext, with common data
+ *          needed by > 1 subschema
  */
 export function contextBuilder({ schema }: ContextBuilderInput): ContextFn {
     const schemaDelegator = new SchemaDelegator(schema);

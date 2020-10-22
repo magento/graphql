@@ -1,4 +1,5 @@
 import { SchemaDelegationContext } from './schemaDelegator';
+export { FrameworkConfig } from './config';
 
 export type GraphQLContext = Readonly<
     {

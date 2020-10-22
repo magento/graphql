@@ -1,7 +1,11 @@
 import { start } from '../server';
 import meow from 'meow';
 import chalk from 'chalk';
-import { prepareForServer, getFrameworkConfig } from '../framework';
+import {
+    prepareForServer,
+    getFrameworkConfigFromEnv,
+    FrameworkConfig,
+} from '../framework';
 import { printSchema } from 'graphql';
 
 /**
@@ -21,16 +25,11 @@ export async function run() {
           --version  Show version
     `);
 
-    const [command] = cli.input as [keyof typeof commands];
-
-    if (!command) {
-        // Default to starting the server if no command is provided
-        commands.start();
-        return;
-    }
+    const [command = 'start'] = cli.input as [keyof typeof commands];
 
     if (commands.hasOwnProperty(command)) {
-        await commands[command]();
+        const config = getFrameworkConfigFromEnv();
+        await commands[command](config);
         return;
     }
 
@@ -44,9 +43,8 @@ const commands = {
     /**
      * @summary Start the HTTP server, and bind /graphql to the GraphQL engine
      */
-    async start() {
-        const config = getFrameworkConfig();
-        const { schema, context } = await prepareForServer();
+    async start(config: FrameworkConfig) {
+        const { schema, context } = await prepareForServer({ config });
 
         await start({
             host: config.get('HOST').asString(),
@@ -64,9 +62,7 @@ const commands = {
      *          and write to stdout. Uses .env format used by
      *          many tools, include Docker
      */
-    config() {
-        const config = getFrameworkConfig();
-
+    config(config: FrameworkConfig) {
         let lines = config.keys().map(key => {
             const defaultValue = config.defaultValue(key).asString();
             return `# ${config.describe(key)}\n${key}=${defaultValue}`;
@@ -80,8 +76,8 @@ const commands = {
      *          schema using the official GraphQL IDL,
      *          and write to stdout
      */
-    async schema() {
-        const { schema } = await prepareForServer();
+    async schema(config: FrameworkConfig) {
+        const { schema } = await prepareForServer({ config });
         console.log(printSchema(schema));
     },
 };

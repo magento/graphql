@@ -1,8 +1,14 @@
 import assert from 'assert';
 import { createMonolithExecutor } from './monolith-executor';
 import { introspectSchema } from 'graphql-tools';
-import { getFrameworkConfig } from '../../config';
+import { FrameworkConfig } from '../../config';
 import { isInputObjectType } from 'graphql';
+import { Logger } from '../../logger';
+
+type Opts = {
+    config: FrameworkConfig;
+    logger: Logger;
+};
 
 /**
  * @summary Builds pieces needed for a remote schema
@@ -28,23 +34,27 @@ import { isInputObjectType } from 'graphql';
  *          We can and should revisit this decision if stitching
  *          becomes hard to maintain.
  */
-export async function createMonolithProxySchema() {
-    const config = getFrameworkConfig();
+export async function createMonolithProxySchema({ config, logger }: Opts) {
     const monolithURL = config.get('MONOLITH_GRAPHQL_URL').asString();
     const executor = createMonolithExecutor(monolithURL);
     let schema;
 
     try {
+        logger.info(`Fetching monolith schema from ${monolithURL}`);
         schema = await introspectSchema(executor);
     } catch (err) {
+        logger.error(
+            `Failed introspecting monolith schema from ${monolithURL}`,
+        );
         throw new Error(
             `Failed introspecting remote Magento schema at "${monolithURL}". ` +
-                'Make sure that the MONOLITH_GRAPHQL_URL variable is set to ' +
+                'Make sure that the MONOLITH_GRAPHQL_URL configuration is set to ' +
                 'the correct value for your Magento instance',
         );
     }
 
     const attrFilterInput = schema.getType('ProductAttributeFilterInput');
+    logger.error;
     assert(
         isInputObjectType(attrFilterInput),
         'Could not find required type "ProductAttributeFilterInput" in PHP application schema. Make sure your Magento store is running version 2.3.4 or later.',

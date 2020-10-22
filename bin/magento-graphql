@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
+const chalk = require('chalk');
 require('../dist/cli')
     .run()
     .catch(err => {
-        console.error(err);
+        console.error(chalk.red(err.stack));
         process.exit(1);
     });

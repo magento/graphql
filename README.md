@@ -11,6 +11,7 @@ Check out the [`Development`](docs/DEVELOPMENT.md) document to get started.
 -   [Why?](docs/WHY.md)
 -   [Development](docs/DEVELOPMENT.md)
 -   [Configuration](docs/CONFIGURATION.md)
+-   [Logging](docs/LOGGING.md)
 -   [Repository Overview](docs/REPOSITORY_OVERVIEW.md)
 -   [Versioning](docs/VERSIONING.md)
 -   [Running with Docker](docs/DOCKER.md)

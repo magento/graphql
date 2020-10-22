@@ -1,14 +1,19 @@
 import assert from 'assert';
 import { credentials } from 'grpc';
 import { promisify } from 'util';
-import { getFrameworkConfig } from '../../config';
+import { FrameworkConfig } from '../../config';
 import gql from 'graphql-tag';
 import { Resolvers } from '../../../../generated/graphql';
 import { ProductsGetRequest } from '../../../../generated/catalog_pb';
 import { CatalogClient } from '../../../../generated/catalog_grpc_pb';
+import { Logger } from '../../logger';
 
-export async function createCatalogSchema() {
-    const config = getFrameworkConfig();
+type Opts = {
+    config: FrameworkConfig;
+    logger: Logger;
+};
+
+export async function createCatalogSchema({ config }: Opts) {
     const host = config.get('CATALOG_STOREFRONT_HOST').asString();
     const port = config.get('CATALOG_STOREFRONT_PORT').asNumber();
 

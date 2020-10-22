@@ -1,4 +1,4 @@
-import { getFrameworkConfig } from '../../config';
+import { FrameworkConfig } from '../../config';
 import gql from 'graphql-tag';
 import {
     introspectSchema,
@@ -20,9 +20,14 @@ import {
     Products,
     ProductInterface,
 } from '../../../../generated/graphql';
+import { Logger } from '../../logger';
 
-export async function createPremiumSearchSchema() {
-    const config = getFrameworkConfig();
+type Opts = {
+    config: FrameworkConfig;
+    logger: Logger;
+};
+
+export async function createPremiumSearchSchema({ config }: Opts) {
     const searchURL = config.get('PREMIUM_SEARCH_GRAPHQL_URL').asString();
     const apiKey = config.get('PREMIUM_SEARCH_API_KEY').asString();
     const executor = createSearchExecutor(searchURL, apiKey);

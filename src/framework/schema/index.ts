@@ -3,25 +3,34 @@ import { GraphQLSchema, DocumentNode } from 'graphql';
 import { createPremiumSearchSchema } from './premium-search';
 import { createMonolithProxySchema } from './monolith-proxy';
 import { createCatalogSchema } from './catalog';
-import { getFrameworkConfig } from '../config';
+import { FrameworkConfig } from '../config';
 import { Resolvers } from '../../../generated/graphql';
+import { Logger } from '../logger';
 
-export async function buildFrameworkSchema() {
+type Opts = {
+    config: FrameworkConfig;
+    logger: Logger;
+};
+
+export async function buildFrameworkSchema({ config, logger }: Opts) {
+    logger.info('Building framework schema');
+
     const subschemas: (SubschemaConfig | GraphQLSchema)[] = [
-        await createMonolithProxySchema(),
+        await createMonolithProxySchema({ config, logger }),
     ];
     const resolvers: Resolvers[] = [];
     const typeDefs: DocumentNode[] = [];
-    const config = getFrameworkConfig();
 
     if (config.get('ENABLE_CATALOG_STOREFRONT').asBoolean()) {
-        const catalog = await createCatalogSchema();
+        logger.debug('Catalog schema enabled');
+        const catalog = await createCatalogSchema({ config, logger });
         resolvers.push(catalog.resolvers);
         typeDefs.push(catalog.typeDefs);
     }
 
     if (config.get('ENABLE_PREMIUM_SEARCH').asBoolean()) {
-        const search = await createPremiumSearchSchema();
+        logger.debug('Premium Search schema enabled');
+        const search = await createPremiumSearchSchema({ config, logger });
         subschemas.push(search.schema);
         resolvers.push(search.resolvers);
         typeDefs.push(search.typeDefs);
