@@ -16,3 +16,9 @@ Check out the [`Development`](docs/DEVELOPMENT.md) document to get started.
 -   [Versioning](docs/VERSIONING.md)
 -   [Running with Docker](docs/DOCKER.md)
 -   [Build Scripts](docs/NPM_SCRIPTS.md)
+
+### Contributing
+Contributions are welcomed! Read the [Contributing Guide](./CONTRIBUTING.md) for more information.
+
+### Licensing
+This project is licensed under the Apache V2 License. See [LICENSE](./LICENSE.md) for more information.
