@@ -30,7 +30,7 @@ const invokeProtoc = (module.exports.invokeProtoc = async () => {
         `--js_out=namespace_prefix=proto,import_style=commonjs_strict,binary:${GEN_DIR}`,
         `--ts_out=service=grpc-node:${GEN_DIR}`,
         `--grpc_out=${GEN_DIR}`,
-        `--proto_path=/Users/andrewlevine/magento-graphql/protobufs`,
+        `--proto_path=./protobufs`,
         ...protoFiles,
     ];
 
