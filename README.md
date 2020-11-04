@@ -21,4 +21,4 @@ Check out the [`Development`](docs/DEVELOPMENT.md) document to get started.
 Contributions are welcomed! Read the [Contributing Guide](./CONTRIBUTING.md) for more information.
 
 ### Licensing
-This project is licensed under the Apache V2 License. See [LICENSE](./LICENSE.md) for more information.
+This project is licensed under the OSL-3.0 License. See [LICENSE](./LICENSE.md) for more information.
