@@ -54,7 +54,6 @@ export async function createMonolithProxySchema({ config, logger }: Opts) {
     }
 
     const attrFilterInput = schema.getType('ProductAttributeFilterInput');
-    logger.error;
     assert(
         isInputObjectType(attrFilterInput),
         'Could not find required type "ProductAttributeFilterInput" in PHP application schema. Make sure your Magento store is running version 2.3.4 or later.',

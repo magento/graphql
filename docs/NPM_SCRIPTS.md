@@ -54,7 +54,7 @@ Runs a full, clean build of `@magento/graphql`, then runs a file-watcher to hand
 
 Updates the `sample.env` file in the root of the project with default configuration values. Includes description of all configuration options.
 
-This should be run whenever new configuration values are added to [`src/framework/config.ts`](../src/framework/config.ts)
+This should be run whenever new configuration values are added to [`src/framework/config/frameworkConfig.ts`](../src/framework/config/frameworkConfig.ts)
 
 ```sh
 > npm run update-config
