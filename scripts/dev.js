@@ -79,7 +79,7 @@ async function init() {
         .on('all', (modificationType, filename) => {
             const ext = extname(filename);
             switch (true) {
-                case ext === '.protoset':
+                case ext === '.proto':
                     debouncedGenGRPC();
                 case ext === '.ts':
                     debouncedGenResolver();
