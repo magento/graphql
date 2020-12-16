@@ -30,6 +30,7 @@
     "fastify-cors": "^3.0.2",
     "fastify-gql": "^3.0.7",
     "graphql": "^14.6.0",
+    "graphql-fields": "^2.0.3",
     "graphql-tag": "^2.10.3",
     "graphql-tools": "^6.2.1",
     "grpc": "^1.24.2",
