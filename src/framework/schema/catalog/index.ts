@@ -2,14 +2,20 @@ import assert from 'assert';
 import { credentials } from 'grpc';
 import { promisify } from 'util';
 import { FrameworkConfig } from '../../config';
-import {NewProducts, Resolvers} from '../../../../generated/graphql';
-import {ProductsGetRequest, Product} from '../../../../generated/catalog_pb';
+import { NewProducts, Resolvers } from '../../../../generated/graphql';
+import { ProductsGetRequest, Product } from '../../../../generated/catalog_pb';
 import { CatalogClient } from '../../../../generated/catalog_grpc_pb';
 import { Logger } from '../../logger';
 import { typeDefs } from './type_defs';
+import { getStorefrontAttributeValue } from './storefront_attributes_mapping';
+import {
+    parseResolveInfo,
+    simplifyParsedResolveInfoFragmentWithType,
+    ResolveTree,
+} from 'graphql-parse-resolve-info';
 import { resolveType } from './catalog_type_resolver';
-import { resolveAttribute, fillResolvers, storefrontAttributesMapping } from './attribute_resolver';
-import { graphQlMapping } from './graphql_mapping'
+import { resolveAttribute, attributeResolversList } from './attribute_resolver';
+import { graphToStorefrontQlMapping } from './graphql_to_storefront_mapping';
 
 type Opts = {
     config: FrameworkConfig;
@@ -24,54 +30,60 @@ export async function createCatalogSchema({ config }: Opts) {
         credentials.createInsecure(),
     );
     const getProducts = promisify(client.getProducts.bind(client));
-    const graphqlFields = require('graphql-fields');
-
-    //Initialize attribute resolvers
-    await fillResolvers();
 
     const resolvers: Resolvers = {
         NewProductInterface: {
-            __resolveType(product, context, info){
-                // return resolveType(product.type_id);
-                // temporary solution as type_id is absent in catalog storefront storage (SFAPP-185)
+            __resolveType(product, context, info) {
+                // TODO: change to: return resolveType(product.type_id);
+                // TODO: temporary solution as type_id is absent in catalog storefront storage (SFAPP-185)
                 return resolveType('downloadable');
             },
         },
 
         Query: {
             async getProductsByIds(root, args, context, info) {
-                const topLevelFields = graphqlFields(info);
-                const requestedAttributes: string[] = Object.keys(topLevelFields['items']);
+                const {
+                    fields,
+                }: any = simplifyParsedResolveInfoFragmentWithType(
+                    <ResolveTree>parseResolveInfo(info),
+                    info.returnType,
+                );
+                let requestedAttributes = getRequestedAttributes(fields);
+
                 const msg = new ProductsGetRequest();
                 const productsId = [];
 
-                for (const key in args.ids) {
-                    if (typeof key !== undefined && args.ids.hasOwnProperty(key)) {
-                        productsId.push(args.ids[key] as string);
-                    }
+                for (const productId of args.ids) {
+                    productsId.push(productId as string);
                 }
                 let catalogStorefrontAttributes: string[] = [];
 
                 //Prepare attributes for catalog storefront request
                 for (const requestedAttribute of requestedAttributes) {
-                    const storefrontAttribute = graphQlMapping.get(requestedAttribute);
+                    const storefrontAttribute = graphToStorefrontQlMapping.get(
+                        requestedAttribute,
+                    );
                     if (storefrontAttribute === undefined) {
-                        catalogStorefrontAttributes.push(requestedAttribute)
-                    } else if (!catalogStorefrontAttributes.includes(storefrontAttribute)) {
-                        catalogStorefrontAttributes.push(storefrontAttribute)
+                        catalogStorefrontAttributes.push(requestedAttribute);
+                    } else if (
+                        !catalogStorefrontAttributes.includes(
+                            storefrontAttribute,
+                        )
+                    ) {
+                        catalogStorefrontAttributes.push(storefrontAttribute);
                     }
                 }
                 msg.setIdsList(productsId);
 
                 // Add type_id field to request as it's needed for the type resolving
-                const requiredFields = [
-                    'type_id'
-                ];
-                catalogStorefrontAttributes = catalogStorefrontAttributes.concat(requiredFields);
+                const requiredFields = ['type_id'];
+                catalogStorefrontAttributes = catalogStorefrontAttributes.concat(
+                    requiredFields,
+                );
                 msg.setAttributeCodesList(catalogStorefrontAttributes);
                 msg.setStore('default');
 
-                //Prepare resource for catalog storefront request
+                //Make request to catalog storefont service
                 const res = await getProducts(msg);
                 assert(res, 'Did not receive a response from Catalog gRPC API');
 
@@ -82,16 +94,25 @@ export async function createCatalogSchema({ config }: Opts) {
                 context.types = [];
                 //Request product data from catalog storefront result
                 for (const key in products) {
-                    if (typeof key !== undefined && products.hasOwnProperty(key)) {
+                    if (
+                        typeof key !== undefined &&
+                        products.hasOwnProperty(key)
+                    ) {
                         let productData: any = {};
                         for (let attribute of requestedAttributes) {
                             let storefrontValue = undefined;
-                            if (storefrontAttributesMapping.includes(attribute))  {
-                                // Fill attribute context if any additional data needed
-                                let attributeContext = {};
-                                storefrontValue = resolveAttribute(products[key], attribute, attributeContext);
+                            if (
+                                attributeResolversList.hasOwnProperty(attribute)
+                            ) {
+                                storefrontValue = resolveAttribute(
+                                    products[key],
+                                    attribute,
+                                );
                             } else {
-                                storefrontValue = getStorefrontValue(attribute, products[key])
+                                storefrontValue = getStorefrontValue(
+                                    attribute,
+                                    products[key],
+                                );
                             }
                             if (typeof storefrontValue !== undefined) {
                                 productData[attribute] = storefrontValue;
@@ -103,8 +124,8 @@ export async function createCatalogSchema({ config }: Opts) {
                 result.items = items;
 
                 return result;
-            }
-        }
+            },
+        },
     };
 
     return { resolvers, typeDefs };
@@ -116,11 +137,42 @@ export async function createCatalogSchema({ config }: Opts) {
  * @param graphQlAttribute
  * @param product
  */
-const getStorefrontValue = (graphQlAttribute: string, product: Product) => {
-    let method = 'get'+graphQlAttribute.replace(/(^|_)([a-z])/ig, ($1) => {
-        return $1.toUpperCase()
+function getStorefrontValue(graphQlAttribute: string, product: Product) {
+    const attribute = graphQlAttribute.replace(/(^|_)([a-z])/gi, $1 => {
+        return $1
+            .toUpperCase()
             .replace('-', '')
             .replace('_', '');
-    })+'()';
-    return eval(`product.${ method }`);
-};
+    });
+
+    return getStorefrontAttributeValue(attribute, product);
+}
+
+/**
+ * Get requested attributes by parsed resolve info fragment
+ *
+ * @param fields
+ */
+function getRequestedAttributes(fields: any) {
+    let result: any[] = [];
+    if (fields.hasOwnProperty('items')) {
+        for (const requestedType of getObjectValues(
+            fields.items.fieldsByTypeName,
+        )) {
+            for (const requestedField of getObjectValues(requestedType)) {
+                result.push(requestedField.name);
+            }
+        }
+    }
+
+    function getObjectValues(object: Object) {
+        const result = [];
+        for (const requestedField of Object.values(object)) {
+            result.push(requestedField);
+        }
+
+        return result;
+    }
+
+    return result;
+}

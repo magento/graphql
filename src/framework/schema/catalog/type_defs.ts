@@ -1,5 +1,5 @@
 /**
- * TEMPORARY solution to test requests to gRPC from test GraphQL query
+ * TODO: TEMPORARY solution to test requests to gRPC from test GraphQL query (should be fixed in SFAPP-138)
  */
 import gql from 'graphql-tag';
 
@@ -17,6 +17,7 @@ export const typeDefs = gql`
         items: [NewProductInterface]
     }
 
+    #TODO: should be replaced by ProductInterface when type merging functionality will be available (SFAPP-138)
     interface NewProductInterface {
         id: Int
         attribute_set_id: Int
@@ -48,10 +49,7 @@ export const typeDefs = gql`
         rating_summary: Float!
         related_products: [NewProductInterface]
         review_count: Int!
-        reviews(
-            pageSize: Int = 20
-            currentPage: Int = 1
-        ): ProductReviews!
+        reviews(pageSize: Int = 20, currentPage: Int = 1): ProductReviews!
 
         short_description: ComplexTextValue
         sku: String
@@ -74,6 +72,7 @@ export const typeDefs = gql`
         websites: [Website]
     }
 
+    #TODO: should be replaced by Product type when type merging functionality will be available (SFAPP-138)
     type NewProductType implements NewProductInterface {
         id: Int
         attribute_set_id: Int
@@ -105,10 +104,7 @@ export const typeDefs = gql`
         rating_summary: Float!
         related_products: [NewProductInterface]
         review_count: Int!
-        reviews(
-            pageSize: Int = 20
-            currentPage: Int = 1
-        ): ProductReviews!
+        reviews(pageSize: Int = 20, currentPage: Int = 1): ProductReviews!
 
         short_description: ComplexTextValue
         sku: String
@@ -131,6 +127,7 @@ export const typeDefs = gql`
         websites: [Website]
     }
 
+    #TODO: should be replaced by DownloadableProduct when type merging functionality will be available (SFAPP-138)
     type NewDownloadableProductType implements NewProductInterface {
         id: Int
         attribute_set_id: Int
@@ -162,10 +159,7 @@ export const typeDefs = gql`
         rating_summary: Float!
         related_products: [NewProductInterface]
         review_count: Int!
-        reviews(
-            pageSize: Int = 20
-            currentPage: Int = 1
-        ): ProductReviews!
+        reviews(pageSize: Int = 20, currentPage: Int = 1): ProductReviews!
 
         short_description: ComplexTextValue
         sku: String

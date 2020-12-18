@@ -1,25 +1,17 @@
-/**
- * Prepare resolvers for complex attributes which are stored in storefront with different structure and keys
- */
-import {Product} from "../../../../generated/catalog_pb";
-import {fillUrlRewriteResolver} from './attribute_resolvers/url_rewrites_resolver';
-import {fillDownloadableProductResolver} from './attribute_resolvers/downloadable_product_resolver';
+import { Product } from '../../../../generated/catalog_pb';
+import { DownloadableProductResolver } from './attribute_resolvers/downloadable_product_resolver';
+import { UrlRewritesResolver } from './attribute_resolvers/url_rewrites_resolver';
 
-export const storefrontAttributesMapping: string[] = [];
+export const attributeResolversList: any = {
+    downloadable_product_samples: 'downloadable',
+    downloadable_product_links: 'downloadable',
+    url_rewrites: 'url_rewrites',
+};
 
-type resolversMap = {
-        attribute: string,
-        function: (product: Product, context: {}) => void
-    }
-export const resolvedAttributes: resolversMap[] = [];
-
-/**
- * Initialize resolvers which are stored in './attribute_resolvers' directory
- */
-export async function fillResolvers() {
-    await fillUrlRewriteResolver();
-    await fillDownloadableProductResolver();
-}
+const attributesToResolve = {
+    downloadable: DownloadableProductResolver,
+    url_rewrites: UrlRewritesResolver,
+};
 
 /**
  * Execute resolver for specified attribute
@@ -28,14 +20,21 @@ export async function fillResolvers() {
  *
  * @param product
  * @param attribute
- * @param context
  */
-export async function resolveAttribute(product: Product, attribute: string, context: {}) {
-    let resolver = resolvedAttributes.find(i => i.attribute === attribute);
-    if (resolver === undefined) {
-        throw new TypeError('Attribute resolver doesn\'t exist');
+export function resolveAttribute(product: Product, attribute: string) {
+    const resolverName = attributeResolversList[attribute];
+    if (hasKey(attributesToResolve, resolverName)) {
+        const resolver = new attributesToResolve[resolverName]();
+        return resolver.resolveAttribute(product, attribute);
     }
-
-    return resolver.function(product, context);
 }
 
+/**
+ * Check is object has a key
+ *
+ * @param object
+ * @param key
+ */
+function hasKey<Object>(object: Object, key: keyof any): key is keyof Object {
+    return key in object;
+}

@@ -3,7 +3,7 @@
  *
  * @param type
  */
-export async function resolveType(type: String) {
+export function resolveType(type: String) {
     if (type === 'simple') {
         return 'NewProductType';
     }
@@ -11,5 +11,5 @@ export async function resolveType(type: String) {
     if (type === 'downloadable') {
         return 'NewDownloadableProductType';
     }
-    return 'NewProductType'
+    return 'NewProductType';
 }
