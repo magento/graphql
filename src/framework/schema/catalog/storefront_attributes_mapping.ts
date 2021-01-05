@@ -6,7 +6,7 @@ import { Product } from '../../../../generated/catalog_pb';
  */
 const attributeToFunction: any = {
     id: function(product: Product) {
-        return product.getId;
+        return product.getId();
     },
     attributeSetId: function(product: Product) {
         return product.getAttributeSetId();
