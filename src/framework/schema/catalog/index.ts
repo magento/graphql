@@ -138,7 +138,7 @@ export async function createCatalogSchema({ config }: Opts) {
  * @param product
  */
 function getStorefrontValue(graphQlAttribute: string, product: Product) {
-    const attribute = graphQlAttribute.replace(/(^|_)([a-z])/gi, $1 => {
+    const attribute = graphQlAttribute.replace(/(_)([a-z])/gi, $1 => {
         return $1
             .toUpperCase()
             .replace('-', '')
