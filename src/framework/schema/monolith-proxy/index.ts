@@ -1,8 +1,19 @@
 import assert from 'assert';
 import { createMonolithExecutor } from './monolith-executor';
-import { introspectSchema } from 'graphql-tools';
+import {
+    introspectSchema,
+    batchDelegateToSchema,
+    TransformQuery,
+    SubschemaConfig,
+} from 'graphql-tools';
 import { FrameworkConfig } from '../../config';
-import { isInputObjectType } from 'graphql';
+import {
+    isInputObjectType,
+    Kind,
+    GraphQLResolveInfo,
+    GraphQLSchema,
+    SelectionSetNode,
+} from 'graphql';
 import { Logger } from '../../logger';
 
 type Opts = {
@@ -35,19 +46,19 @@ type Opts = {
  *          becomes hard to maintain.
  */
 export async function createMonolithProxySchema({ config, logger }: Opts) {
-    const monolithURL = config.get('MONOLITH_GRAPHQL_URL').asString();
-    const executor = createMonolithExecutor(monolithURL);
+    const monolithGraphQLURL = config.get('MONOLITH_GRAPHQL_URL').asString();
+    const executor = createMonolithExecutor({ monolithGraphQLURL, logger });
     let schema;
 
     try {
-        logger.info(`Fetching monolith schema from ${monolithURL}`);
+        logger.info(`Fetching monolith schema from ${monolithGraphQLURL}`);
         schema = await introspectSchema(executor);
     } catch (err) {
         logger.error(
-            `Failed introspecting monolith schema from ${monolithURL}`,
+            `Failed introspecting monolith schema from ${monolithGraphQLURL}`,
         );
         throw new Error(
-            `Failed introspecting remote Magento schema at "${monolithURL}". ` +
+            `Failed introspecting remote Magento schema at "${monolithGraphQLURL}". ` +
                 'Make sure that the MONOLITH_GRAPHQL_URL configuration is set to ' +
                 'the correct value for your Magento instance',
         );
@@ -67,5 +78,79 @@ export async function createMonolithProxySchema({ config, logger }: Opts) {
         'Could not find required field "ProductAttributeFilterInput.sku" in PHP application schema. Make sure your store has the "sku" attribute exposed for filtering: https://devdocs.magento.com/guides/v2.4/graphql/custom-filters.html',
     );
 
-    return { schema, executor };
+    return {
+        schema,
+        executor,
+        merge: {
+            SimpleProduct: {
+                // Make sure the `sky` field is always fetched from other services,
+                // to ensure we can use it for a lookup in the monolith
+                selectionSet: `{ sku }`,
+                // Track for caching/deduping based on sku
+                key: (obj: { sku: string }) => obj.sku,
+                // TODO: This `resolve` function and manual usage of `batchDelegateToSchema`
+                //       is a necessary hack right now to allow type-merging to delegate
+                //       to root queries that return more than just a single list type.
+                //
+                //       There should be a cleaner way to support this pattern, and I've logged
+                //       a GH issue with graphql-tools looking for a better option
+                //       https://github.com/ardatan/graphql-tools/issues/2438
+                resolve(
+                    _originalResult: any,
+                    context: any,
+                    info: GraphQLResolveInfo,
+                    subschema: GraphQLSchema | SubschemaConfig,
+                    selectionSet: SelectionSetNode,
+                    key: string | number,
+                ) {
+                    return batchDelegateToSchema({
+                        schema: subschema,
+                        operation: 'query',
+                        fieldName: 'products',
+                        key,
+                        // Generate the arguments object for the `Query.products` operation
+                        // we will send to the monolith
+                        argsFromKeys: (skus: readonly string[]) => ({
+                            filter: { sku: { in: skus } },
+                        }),
+                        selectionSet,
+                        context,
+                        info,
+                        // We've landed here from a merged type resolver - must skip
+                        // here or we'll end up in an infinite loop
+                        skipTypeMerging: true,
+                        transforms: [
+                            // The monolith returns the `Products` type from `Query.products`,
+                            // but graphql-tools type merging wants `Query.products` to return
+                            // just a [ProductInterface]. To work-around this for now, we use
+                            // a transform query, and hoist the results of the `Product.items`
+                            // field to be the only result from `Query.products`.
+                            new TransformQuery({
+                                // Look for `Query.products`
+                                path: ['products'],
+                                queryTransformer: subtree => ({
+                                    kind: Kind.SELECTION_SET,
+                                    selections: [
+                                        {
+                                            kind: Kind.FIELD,
+                                            name: {
+                                                kind: Kind.NAME,
+                                                value: 'items',
+                                            },
+                                            selectionSet: subtree,
+                                        },
+                                    ],
+                                }),
+                                resultTransformer(result) {
+                                    // Only return the items, not the wrapper
+                                    // with paging info
+                                    return result?.items || [];
+                                },
+                            }),
+                        ],
+                    });
+                },
+            },
+        },
+    };
 }

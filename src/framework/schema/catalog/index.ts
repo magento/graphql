@@ -13,7 +13,7 @@ type Opts = {
     logger: Logger;
 };
 
-export async function createCatalogSchema({ config }: Opts) {
+export async function createCatalogSchema({ config, logger }: Opts) {
     const host = config.get('CATALOG_STOREFRONT_HOST').asString();
     const port = config.get('CATALOG_STOREFRONT_PORT').asNumber();
 
@@ -40,7 +40,10 @@ export async function createCatalogSchema({ config }: Opts) {
                 const msg = new ProductsGetRequest();
                 msg.setIdsList([args.id as string]);
                 msg.setStore('default');
+                msg.setAttributeCodesList(['name']);
 
+                logger.debug('Sending product request to Catalog gRPC API');
+                logger.trace(msg.toObject());
                 const res = await getProducts(msg);
                 assert(res, 'Did not receive a response from Catalog gRPC API');
 

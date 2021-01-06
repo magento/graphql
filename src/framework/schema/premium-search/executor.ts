@@ -2,6 +2,13 @@ import { AsyncExecutor, ExecutionParams } from 'graphql-tools';
 import { print } from 'graphql';
 import fetch from 'node-fetch';
 import { GraphQLContext } from '../../types';
+import { Logger } from '../../logger';
+
+type Opts = {
+    searchURL: string;
+    apiKey: string;
+    logger: Logger;
+};
 
 /**
  * @summary Builds a graphql-tools "executor" that can be used to build
@@ -9,10 +16,11 @@ import { GraphQLContext } from '../../types';
  * @param  searchURL Absolute URL of the Search Service's GraphQL endpoint
  * @param  apiKey Value passed to Search Service as "X-API-KEY" header
  */
-export const createSearchExecutor = (
-    searchURL: string,
-    apiKey: string,
-): AsyncExecutor => {
+export const createSearchExecutor = ({
+    searchURL,
+    apiKey,
+    logger,
+}: Opts): AsyncExecutor => {
     return (opts: ExecutionParams) => {
         const headers = {
             'Content-Type': 'application/json',
@@ -31,11 +39,16 @@ export const createSearchExecutor = (
                     ctx.requestHeaders['magento-website-code'],
             });
         }
+
+        const printedQuery = print(opts.document);
+        logger.debug(`Proxying operation to Search schema`);
+        logger.trace(printedQuery);
+
         return fetch(searchURL, {
             method: 'POST',
             headers,
             body: JSON.stringify({
-                query: print(opts.document),
+                query: printedQuery,
                 variables: opts.variables,
             }),
         }).then(res => res.json());

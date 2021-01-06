@@ -1,6 +1,5 @@
 import { GraphQLSchema } from 'graphql';
 import { GraphQLContext, ContextFn } from './types';
-import { SchemaDelegator } from './schemaDelegator';
 import { Logger } from './logger';
 
 type ContextBuilderInput = {
@@ -13,8 +12,6 @@ type ContextBuilderInput = {
  *          needed by > 1 subschema
  */
 export function contextBuilder({ schema }: ContextBuilderInput): ContextFn {
-    const schemaDelegator = new SchemaDelegator(schema);
-
     return (headers: Record<string, unknown>): GraphQLContext => {
         const monolithToken = tokenFromAuthHeader(
             headers.authorization as string,
@@ -27,7 +24,6 @@ export function contextBuilder({ schema }: ContextBuilderInput): ContextFn {
             currency,
             store,
             requestHeaders: headers,
-            schemaDelegator,
         };
     };
 }

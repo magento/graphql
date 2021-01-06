@@ -31,7 +31,7 @@
     "fastify-gql": "^3.0.7",
     "graphql": "^14.6.0",
     "graphql-tag": "^2.10.3",
-    "graphql-tools": "^6.2.1",
+    "graphql-tools": "^7.0.2",
     "grpc": "^1.24.2",
     "meow": "^7.1.1",
     "node-fetch": "^2.6.0",
