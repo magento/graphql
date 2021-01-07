@@ -1,25 +1,11 @@
 import { FrameworkConfig } from '../../config';
-import gql from 'graphql-tag';
 import {
     introspectSchema,
-    RenameTypes,
-    TransformObjectFields,
-    WrapQuery,
+    TransformInterfaceFields,
+    FilterInterfaceFields,
 } from 'graphql-tools';
-import {
-    GraphQLSchema,
-    GraphQLInterfaceType,
-    GraphQLNonNull,
-    Kind,
-    GraphQLString,
-} from 'graphql';
+import { GraphQLSchema } from 'graphql';
 import { createSearchExecutor } from './executor';
-import { GraphQLContext } from '../../types';
-import {
-    Resolvers,
-    Products,
-    ProductInterface,
-} from '../../../../generated/graphql';
 import { Logger } from '../../logger';
 
 type Opts = {
@@ -27,13 +13,14 @@ type Opts = {
     logger: Logger;
 };
 
-export async function createPremiumSearchSchema({ config }: Opts) {
+export async function createPremiumSearchSchema({ config, logger }: Opts) {
     const searchURL = config.get('PREMIUM_SEARCH_GRAPHQL_URL').asString();
     const apiKey = config.get('PREMIUM_SEARCH_API_KEY').asString();
-    const executor = createSearchExecutor(searchURL, apiKey);
+    const executor = createSearchExecutor({ searchURL, apiKey, logger });
     let searchSchema: GraphQLSchema;
 
     try {
+        logger.info(`Fetching Premium Search schema from ${searchURL}`);
         searchSchema = await introspectSchema(executor);
     } catch (err) {
         throw new Error(
@@ -41,104 +28,41 @@ export async function createPremiumSearchSchema({ config }: Opts) {
         );
     }
 
-    const typeDefs = gql`
-        # Minimal copy of types from Search Service. Only includes types
-        # we're overriding
-        type ProductSearchItem {
-            product: ProductInterface!
-        }
-    `;
-
-    const resolvers: Resolvers<GraphQLContext> = {
-        // Note: This stitching resolver can go away entirely if search starts returning
-        // a `ProductInterface` subset, instead of the `ProductItem` type
-        ProductSearchItem: {
-            // Note: This currently triggers N+1 calls to the monolith,
-            // but that will be resolved when Search renames ProductItem to
-            // ProductInterface
-            product: {
-                selectionSet: '{ product { sku } }',
-                async resolve(parent, args, context, info) {
-                    const result = await context.schemaDelegator.delegate(
-                        'query',
-                        {
-                            fieldName: 'products',
-                            args: {
-                                filter: {
-                                    sku: { eq: parent.product.sku },
-                                },
-                                pageSize: 1,
-                                currentPage: 1,
-                            },
-                            info,
-                            transforms: [
-                                new WrapQuery(
-                                    ['products'],
-                                    subtree => {
-                                        // Inject a selection of the "items" field
-                                        // for the query being sent to the php monolith
-                                        return {
-                                            kind: Kind.FIELD,
-                                            name: {
-                                                kind: Kind.NAME,
-                                                value: 'items',
-                                            },
-                                            // Move selected ProductInterface fields from original
-                                            // location to a subtree of the "items" field
-                                            selectionSet: subtree,
-                                        };
-                                    },
-                                    (result: Products) =>
-                                        result &&
-                                        result.items &&
-                                        result.items[0],
-                                ),
-                            ],
-                        },
-                    );
-
-                    if (!result) {
-                        throw new Error(
-                            `Could not find product with sku "${parent.product.sku}"`,
-                        );
-                    }
-                    // Yuck
-                    return (result as any) as ProductInterface;
-                },
-            },
-        },
-    };
-
     const schemaConfig = {
         schema: searchSchema,
         executor,
+        // Note: Transforms always run at least twice (weird, I know).
+        // https://github.com/ardatan/graphql-tools/blob/cdfe6bed418c8496d3223b98e465987dc34bef75/packages/wrap/src/wrapSchema.ts#L34-L37
+        // In the linked code, `generateProxyingResolvers` and `applySchemaTransforms` both run the transforms below. Will lead to dupe logs,
+        // but not the end of the world
         transforms: [
-            // Prevent conflict with Magento Core's "Price" type
-            new RenameTypes(name => {
-                if (name === 'Price') return 'ProductItemPrice';
+            new FilterInterfaceFields((typeName, fieldName) => {
+                const isUID =
+                    typeName === 'ProductInterface' && fieldName === 'uid';
+                return !isUID;
             }),
 
-            // Use Magento Core's `ProductInterface` instead of Search's `ProductItem` type
-            new TransformObjectFields((typeName, fieldName, fieldConfig) => {
-                if (
-                    typeName === 'ProductSearchItem' &&
-                    fieldName === 'product'
-                ) {
-                    return {
-                        ...fieldConfig,
-                        type: new GraphQLNonNull(
-                            new GraphQLInterfaceType({
-                                name: 'ProductInterface',
-                                fields: () => ({
-                                    sku: { type: GraphQLString },
-                                }),
-                            }),
-                        ),
-                    };
+            // Remove deprecation flag from ProductInterface.id, set by remote
+            // search schema
+            new TransformInterfaceFields((typeName, fieldName, fieldConfig) => {
+                const isProductID =
+                    typeName === 'ProductInterface' && fieldName === 'id';
+                if (isProductID) {
+                    return { ...fieldConfig, deprecationReason: null };
                 }
+            }),
+
+            // Search service adds a `custom_attributes` field,
+            // but derived types in Magento monolith do not have
+            // that field, leading to an invalid schema
+            new FilterInterfaceFields((typeName, fieldName) => {
+                const isCustomAttributes =
+                    typeName === 'ProductInterface' &&
+                    fieldName === 'custom_attributes';
+                return !isCustomAttributes;
             }),
         ],
     };
 
-    return { schema: schemaConfig, resolvers, typeDefs };
+    return schemaConfig;
 }

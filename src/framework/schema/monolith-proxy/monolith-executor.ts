@@ -2,6 +2,19 @@ import { AsyncExecutor, ExecutionParams } from 'graphql-tools';
 import { print } from 'graphql';
 import { GraphQLContext } from '../../types';
 import { default as nodeFetch } from 'node-fetch';
+import { Logger } from '../../logger';
+
+type Opts = {
+    /**
+     * @summary Absolute URL of monolith GraphQL endpoint
+     */
+    monolithGraphQLURL: string;
+    logger: Logger;
+    /**
+     * @summary Optionally override the default fetch client
+     */
+    fetch?: WindowOrWorkerGlobalScope['fetch'] | typeof nodeFetch;
+};
 
 /**
  * @summary Create a custom "executor" for wrapSchema to use
@@ -11,10 +24,11 @@ import { default as nodeFetch } from 'node-fetch';
  * @see https://devdocs.magento.com/guides/v2.3/graphql/send-request.html#request-headers
  * @see https://www.graphql-tools.com/docs/remote-schemas#wrapschemaschemaconfig
  */
-export function createMonolithExecutor(
-    monolithGraphQLUrl: string,
-    fetch: WindowOrWorkerGlobalScope['fetch'] | typeof nodeFetch = nodeFetch,
-): AsyncExecutor {
+export function createMonolithExecutor({
+    monolithGraphQLURL,
+    logger,
+    fetch = nodeFetch,
+}: Opts): AsyncExecutor {
     return async (opts: ExecutionParams) => {
         const headers = {
             'Content-Type': 'application/json',
@@ -32,13 +46,17 @@ export function createMonolithExecutor(
             );
         }
 
+        const printedQuery = print(opts.document);
+        logger.debug(`Proxying operation to monolith schema`);
+        logger.trace(printedQuery);
+
         // TODO: Re-write queries (not mutations) to GET where possible,
         //       to hit varnish for some warm cache wins
-        const result = await fetch(monolithGraphQLUrl, {
+        const result = await fetch(monolithGraphQLURL, {
             method: 'POST',
             headers,
             body: JSON.stringify({
-                query: print(opts.document),
+                query: printedQuery,
                 variables: opts.variables,
             }),
         });

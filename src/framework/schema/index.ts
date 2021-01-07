@@ -30,10 +30,7 @@ export async function buildFrameworkSchema({ config, logger }: Opts) {
 
     if (config.get('ENABLE_PREMIUM_SEARCH').asBoolean()) {
         logger.debug('Premium Search schema enabled');
-        const search = await createPremiumSearchSchema({ config, logger });
-        subschemas.push(search.schema);
-        resolvers.push(search.resolvers);
-        typeDefs.push(search.typeDefs);
+        subschemas.push(await createPremiumSearchSchema({ config, logger }));
     }
 
     return stitchSchemas({

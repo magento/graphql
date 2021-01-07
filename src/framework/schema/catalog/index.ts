@@ -27,7 +27,7 @@ type Opts = {
     logger: Logger;
 };
 
-export async function createCatalogSchema({ config }: Opts) {
+export async function createCatalogSchema({ config, logger }: Opts) {
     const host = config.get('CATALOG_STOREFRONT_HOST').asString();
     const port = config.get('CATALOG_STOREFRONT_PORT').asNumber();
     const client = new CatalogClient(
@@ -65,6 +65,8 @@ export async function createCatalogSchema({ config }: Opts) {
                 msg.setStore('default');
 
                 //Make request to catalog storefont service
+                logger.debug('Sending product request to Catalog gRPC API');
+                logger.trace(msg.toObject());
                 const res = await getProducts(msg);
                 assert(res, 'Did not receive a response from Catalog gRPC API');
 
