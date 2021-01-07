@@ -149,10 +149,6 @@ const attributeToFunction: any = {
     shopperInputOptionsList: function(product: Product) {
         return product.getShopperInputOptionsList();
     },
-
-    default: function(product: Product) {
-        return product.getId();
-    },
 };
 
 /**
@@ -167,6 +163,11 @@ export function getStorefrontAttributeValue(
 ): string | [] | null {
     const getAttribute = attributeToFunction.hasOwnProperty(attribute)
         ? attribute
-        : 'default';
-    return attributeToFunction[getAttribute](product);
+        : undefined;
+    if (getAttribute !== undefined) {
+        return attributeToFunction[getAttribute](product);
+    }
+    throw new Error(
+        `Get attribute method for attribute "${attribute}" doesn't exist`,
+    );
 }

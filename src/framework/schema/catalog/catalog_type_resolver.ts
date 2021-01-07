@@ -3,7 +3,7 @@
  *
  * @param type
  */
-export function resolveType(type: String) {
+export function resolveType(type: 'simple' | 'downloadable') {
     if (type === 'simple') {
         return 'NewProductType';
     }

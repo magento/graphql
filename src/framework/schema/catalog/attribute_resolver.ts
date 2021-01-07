@@ -1,16 +1,16 @@
 import { Product } from '../../../../generated/catalog_pb';
-import { DownloadableProductResolver } from './attribute_resolvers/downloadable_product_resolver';
-import { UrlRewritesResolver } from './attribute_resolvers/url_rewrites_resolver';
+import { resolveDownloadableAttribute } from './attribute_resolvers/downloadable_product_resolver';
+import { resolveUrlRewritesAttribute } from './attribute_resolvers/url_rewrites_resolver';
 
-export const attributeResolversList: any = {
+export const attributeResolversList: { [key: string]: string } = {
     downloadable_product_samples: 'downloadable',
     downloadable_product_links: 'downloadable',
     url_rewrites: 'url_rewrites',
 };
 
-const attributesToResolve = {
-    downloadable: DownloadableProductResolver,
-    url_rewrites: UrlRewritesResolver,
+const attributesToResolve: { [key: string]: Function } = {
+    downloadable: resolveDownloadableAttribute,
+    url_rewrites: resolveUrlRewritesAttribute,
 };
 
 /**
@@ -23,18 +23,8 @@ const attributesToResolve = {
  */
 export function resolveAttribute(product: Product, attribute: string) {
     const resolverName = attributeResolversList[attribute];
-    if (hasKey(attributesToResolve, resolverName)) {
-        const resolver = new attributesToResolve[resolverName]();
-        return resolver.resolveAttribute(product, attribute);
+    if (attributesToResolve.hasOwnProperty(resolverName)) {
+        const resolver = attributesToResolve[resolverName];
+        return resolver(product, attribute);
     }
-}
-
-/**
- * Check is object has a key
- *
- * @param object
- * @param key
- */
-function hasKey<Object>(object: Object, key: keyof any): key is keyof Object {
-    return key in object;
 }

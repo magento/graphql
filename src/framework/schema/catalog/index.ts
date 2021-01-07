@@ -2,19 +2,24 @@ import assert from 'assert';
 import { credentials } from 'grpc';
 import { promisify } from 'util';
 import { FrameworkConfig } from '../../config';
-import { NewProducts, Resolvers } from '../../../../generated/graphql';
-import { ProductsGetRequest, Product } from '../../../../generated/catalog_pb';
+import {
+    NewProductInterface,
+    NewProducts,
+    Resolvers,
+} from '../../../../generated/graphql';
+import { Product, ProductsGetRequest } from '../../../../generated/catalog_pb';
 import { CatalogClient } from '../../../../generated/catalog_grpc_pb';
 import { Logger } from '../../logger';
 import { typeDefs } from './type_defs';
 import { getStorefrontAttributeValue } from './storefront_attributes_mapping';
 import {
     parseResolveInfo,
-    simplifyParsedResolveInfoFragmentWithType,
     ResolveTree,
+    simplifyParsedResolveInfoFragmentWithType,
+    FieldsByTypeName,
 } from 'graphql-parse-resolve-info';
 import { resolveType } from './catalog_type_resolver';
-import { resolveAttribute, attributeResolversList } from './attribute_resolver';
+import { attributeResolversList, resolveAttribute } from './attribute_resolver';
 import { graphToStorefrontQlMapping } from './graphql_to_storefront_mapping';
 
 type Opts = {
@@ -44,42 +49,18 @@ export async function createCatalogSchema({ config }: Opts) {
             async getProductsByIds(root, args, context, info) {
                 const {
                     fields,
-                }: any = simplifyParsedResolveInfoFragmentWithType(
+                }: { fields: any } = simplifyParsedResolveInfoFragmentWithType(
                     <ResolveTree>parseResolveInfo(info),
                     info.returnType,
                 );
-                let requestedAttributes = getRequestedAttributes(fields);
 
-                const msg = new ProductsGetRequest();
-                const productsId = [];
-
-                for (const productId of args.ids) {
-                    productsId.push(productId as string);
-                }
-                let catalogStorefrontAttributes: string[] = [];
-
-                //Prepare attributes for catalog storefront request
-                for (const requestedAttribute of requestedAttributes) {
-                    const storefrontAttribute = graphToStorefrontQlMapping.get(
-                        requestedAttribute,
-                    );
-                    if (storefrontAttribute === undefined) {
-                        catalogStorefrontAttributes.push(requestedAttribute);
-                    } else if (
-                        !catalogStorefrontAttributes.includes(
-                            storefrontAttribute,
-                        )
-                    ) {
-                        catalogStorefrontAttributes.push(storefrontAttribute);
-                    }
-                }
-                msg.setIdsList(productsId);
-
-                // Add type_id field to request as it's needed for the type resolving
-                const requiredFields = ['type_id'];
-                catalogStorefrontAttributes = catalogStorefrontAttributes.concat(
-                    requiredFields,
+                const requestedAttributes = getRequestedAttributes(fields);
+                const catalogStorefrontAttributes = getCatalogStorefrontAttributes(
+                    requestedAttributes,
                 );
+                const msg = new ProductsGetRequest();
+
+                msg.setIdsList(<Array<string>>args.ids);
                 msg.setAttributeCodesList(catalogStorefrontAttributes);
                 msg.setStore('default');
 
@@ -88,38 +69,15 @@ export async function createCatalogSchema({ config }: Opts) {
                 assert(res, 'Did not receive a response from Catalog gRPC API');
 
                 const products = res.getItemsList();
-
                 const result = {} as NewProducts;
                 const items = [];
-                context.types = [];
                 //Request product data from catalog storefront result
-                for (const key in products) {
-                    if (
-                        typeof key !== undefined &&
-                        products.hasOwnProperty(key)
-                    ) {
-                        let productData: any = {};
-                        for (let attribute of requestedAttributes) {
-                            let storefrontValue = undefined;
-                            if (
-                                attributeResolversList.hasOwnProperty(attribute)
-                            ) {
-                                storefrontValue = resolveAttribute(
-                                    products[key],
-                                    attribute,
-                                );
-                            } else {
-                                storefrontValue = getStorefrontValue(
-                                    attribute,
-                                    products[key],
-                                );
-                            }
-                            if (typeof storefrontValue !== undefined) {
-                                productData[attribute] = storefrontValue;
-                            }
-                        }
-                        items.push(productData);
-                    }
+                for (const product of products) {
+                    const productData = getProductData(
+                        product,
+                        requestedAttributes,
+                    );
+                    items.push(productData);
                 }
                 result.items = items;
 
@@ -153,26 +111,95 @@ function getStorefrontValue(graphQlAttribute: string, product: Product) {
  *
  * @param fields
  */
-function getRequestedAttributes(fields: any) {
-    let result: any[] = [];
+function getRequestedAttributes(fields: {
+    items: { fieldsByTypeName: FieldsByTypeName };
+}): string[] {
+    let result: string[] = [];
+
     if (fields.hasOwnProperty('items')) {
-        for (const requestedType of getObjectValues(
-            fields.items.fieldsByTypeName,
-        )) {
-            for (const requestedField of getObjectValues(requestedType)) {
-                result.push(requestedField.name);
+        if (
+            fields.hasOwnProperty('items') &&
+            fields.items.hasOwnProperty('fieldsByTypeName')
+        ) {
+            let requestedType: [];
+            for (requestedType of getObjectValues(
+                fields.items.fieldsByTypeName,
+            )) {
+                for (const requestedField of Object.values(requestedType)) {
+                    const { name } = requestedField;
+                    result.push(name);
+                }
             }
         }
     }
 
-    function getObjectValues(object: Object) {
-        const result = [];
-        for (const requestedField of Object.values(object)) {
-            result.push(requestedField);
-        }
+    return result;
+}
 
-        return result;
+/**
+ * Get object values for provided object
+ *
+ * @param object
+ */
+function getObjectValues(object: Object): any[] {
+    const result = [];
+    for (const requestedField of Object.values(object)) {
+        result.push(requestedField);
     }
 
     return result;
+}
+
+/**
+ * Get list of catalog storefront attribute names by requested in GraphQl attributes list
+ *
+ * @param requestedAttributes
+ */
+function getCatalogStorefrontAttributes(requestedAttributes: string[]) {
+    let catalogStorefrontAttributes: string[] = [];
+    //Prepare attributes for catalog storefront request
+    for (const requestedAttribute of requestedAttributes) {
+        const storefrontAttribute = graphToStorefrontQlMapping.get(
+            requestedAttribute,
+        );
+        if (
+            storefrontAttribute !== undefined &&
+            !catalogStorefrontAttributes.includes(storefrontAttribute)
+        ) {
+            catalogStorefrontAttributes.push(storefrontAttribute);
+        } else {
+            catalogStorefrontAttributes.push(requestedAttribute);
+        }
+    }
+    // Add type_id field to request as it's needed for the type resolving
+    // TODO: 'type_id' is deprecated - look for something else to use
+    const requiredFields = ['type_id'];
+
+    return catalogStorefrontAttributes.concat(requiredFields);
+}
+
+/**
+ * Get product data from Product object by requested attributes
+ *
+ * @param product
+ * @param requestedAttributes
+ */
+
+function getProductData(
+    product: Product,
+    requestedAttributes: string[],
+): NewProductInterface {
+    let productData = {} as NewProductInterface;
+
+    for (let attribute of requestedAttributes) {
+        let storefrontValue = undefined;
+        if (attributeResolversList.hasOwnProperty(attribute)) {
+            storefrontValue = resolveAttribute(product, attribute);
+        } else {
+            storefrontValue = getStorefrontValue(attribute, product);
+        }
+
+        Object.assign(productData, { [attribute]: storefrontValue });
+    }
+    return productData;
 }
