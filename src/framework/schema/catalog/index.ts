@@ -3,8 +3,8 @@ import { credentials } from 'grpc';
 import { promisify } from 'util';
 import { FrameworkConfig } from '../../config';
 import {
-    NewProductInterface,
-    NewProducts,
+    ProductInterface,
+    Products,
     Resolvers,
 } from '../../../../generated/graphql';
 import { Product, ProductsGetRequest } from '../../../../generated/catalog_pb';
@@ -37,7 +37,7 @@ export async function createCatalogSchema({ config, logger }: Opts) {
     const getProducts = promisify(client.getProducts.bind(client));
 
     const resolvers: Resolvers = {
-        NewProductInterface: {
+        ProductInterface: {
             __resolveType(product, context, info) {
                 // TODO: change to: return resolveType(product.type_id);
                 // TODO: temporary solution as type_id is absent in catalog storefront storage (SFAPP-185)
@@ -71,7 +71,7 @@ export async function createCatalogSchema({ config, logger }: Opts) {
                 assert(res, 'Did not receive a response from Catalog gRPC API');
 
                 const products = res.getItemsList();
-                const result = {} as NewProducts;
+                const result = {} as Products;
                 const items = [];
                 //Request product data from catalog storefront result
                 for (const product of products) {
@@ -190,8 +190,8 @@ function getCatalogStorefrontAttributes(requestedAttributes: string[]) {
 function getProductData(
     product: Product,
     requestedAttributes: string[],
-): NewProductInterface {
-    let productData = {} as NewProductInterface;
+): ProductInterface {
+    let productData = {} as ProductInterface;
 
     for (let attribute of requestedAttributes) {
         let storefrontValue = undefined;

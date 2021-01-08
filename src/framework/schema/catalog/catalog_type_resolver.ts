@@ -5,11 +5,11 @@
  */
 export function resolveType(type: 'simple' | 'downloadable') {
     if (type === 'simple') {
-        return 'NewProductType';
+        return 'SimpleProduct';
     }
 
     if (type === 'downloadable') {
-        return 'NewDownloadableProductType';
+        return 'DownloadableProduct';
     }
-    return 'NewProductType';
+    return 'SimpleProduct';
 }
