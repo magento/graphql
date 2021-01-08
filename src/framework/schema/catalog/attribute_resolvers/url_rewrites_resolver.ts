@@ -37,7 +37,7 @@ function getRewriteParameters(
             name: rewriteParameter.getName(),
             value: rewriteParameter.getValue(),
         };
+        rewriteParameters.push(params);
     }
-    rewriteParameters.push(params);
     return rewriteParameters;
 }
