@@ -127,9 +127,9 @@ function getRequestedAttributes(fields: {
             for (requestedType of getObjectValues(
                 fields.items.fieldsByTypeName,
             )) {
-                for (const requestedField of Object.values(requestedType)) {
-                    const { name } = requestedField;
-                    result.push(name);
+                let requestedField: ResolveTree;
+                for (requestedField of Object.values(requestedType)) {
+                    result.push(requestedField.name);
                 }
             }
         }
