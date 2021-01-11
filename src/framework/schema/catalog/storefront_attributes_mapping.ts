@@ -152,7 +152,7 @@ const attributeToFunction: any = {
 };
 
 /**
- * Get store front attribute value by attribute code
+ * Get storefront attribute value by attribute code
  *
  * @param attribute
  * @param product

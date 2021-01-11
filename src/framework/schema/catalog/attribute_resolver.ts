@@ -16,8 +16,6 @@ const attributesToResolve: { [key: string]: Function } = {
 /**
  * Execute resolver for specified attribute
  *
- * "context" parameter can be used to pass extra data (as request schema e.t.c) for attribute resolver
- *
  * @param product
  * @param attribute
  */
