@@ -83,7 +83,7 @@ export async function createMonolithProxySchema({ config, logger }: Opts) {
         executor,
         merge: {
             SimpleProduct: {
-                // Make sure the `sky` field is always fetched from other services,
+                // Make sure the `sku` field is always fetched from other services,
                 // to ensure we can use it for a lookup in the monolith
                 selectionSet: `{ sku }`,
                 // Track for caching/deduping based on sku
