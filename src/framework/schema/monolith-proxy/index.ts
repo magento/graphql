@@ -82,6 +82,7 @@ export async function createMonolithProxySchema({ config, logger }: Opts) {
         schema,
         executor,
         merge: {
+            // TODO: (SFAPP-279) Merge products data by ProductInterface type (not by specific type SimpleProduct)
             SimpleProduct: {
                 // Make sure the `sku` field is always fetched from other services,
                 // to ensure we can use it for a lookup in the monolith

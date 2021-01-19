@@ -36,6 +36,18 @@ export const frameworkConfig = {
         docs: 'Port of the Catalog Storefront gRPC API',
         default: '9001',
     },
+    ENABLE_SEARCH_STOREFRONT: {
+        docs: 'Enable the Search Storefront integration',
+        default: 'false',
+    },
+    SEARCH_STOREFRONT_HOST: {
+        docs: 'Host of the Search Storefront gRPC API',
+        default: 'search-storefront.test',
+    },
+    SEARCH_STOREFRONT_PORT: {
+        docs: 'Port of the Search Storefront gRPC API',
+        default: '9001',
+    },
     ENABLE_PREMIUM_SEARCH: {
         docs: 'Enables the Magento Premium Search integration',
         default: 'false',
