@@ -32,20 +32,10 @@ export async function buildFrameworkSchema({ config, logger }: Opts) {
         logger.debug('Premium Search schema enabled');
         subschemas.push(await createPremiumSearchSchema({ config, logger }));
     }
-    // TODO: (SFAPP-274) We stitch schema here just to pass it for search schema creation (needed to delegateToSchema method execution)
-    // TODO: but schema stitching should be executed only once. Should be fixed after "getProductsByIds" delegated call implementation
-    let stitchedSchemas = stitchSchemas({
-        mergeTypes: true,
-        subschemas,
-        // @ts-ignore
-        resolvers,
-        typeDefs,
-    });
 
     if (config.get('ENABLE_SEARCH_STOREFRONT').asBoolean()) {
-        console.log('search enabled');
-        logger.debug('Search schema enabled');
-        const search = await searchSchema({ config, logger, stitchedSchemas });
+        logger.debug('Storefront Search enabled');
+        const search = await searchSchema({ config, logger });
         subschemas.push(search);
     }
 

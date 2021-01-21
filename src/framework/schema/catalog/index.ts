@@ -17,7 +17,19 @@ import { attributeResolversList, resolveAttribute } from './attribute_resolver';
 import { CatalogClient } from '../../../../generated/catalog_grpc_pb';
 import { credentials } from 'grpc';
 import { promisify } from 'util';
-import { resolveType } from './product_type_resolver';
+import {
+    GraphQLResolveInfo,
+    GraphQLSchema,
+    Kind,
+    SelectionSetNode,
+} from 'graphql';
+import {
+    batchDelegateToSchema,
+    delegateToSchema,
+    SubschemaConfig,
+    TransformQuery,
+} from 'graphql-tools';
+import { resolveType } from '../catalog-search/product_type_resolver';
 
 type Opts = {
     config: FrameworkConfig;
@@ -113,6 +125,78 @@ export async function catalogSchema({ config, logger }: Opts) {
 
     return {
         schema: catalogSchema,
+        merge: {
+            // TODO: (SFAPP-279) Merge products data by ProductInterface type (not by specific type SimpleProduct)
+            SimpleProduct: {
+                // Make sure the `id` field is always fetched from other services,
+                // to ensure we can use it for a lookup in the monolith
+                selectionSet: '{ id }',
+                // Track for caching/deduping based on sku
+                key: (obj: { id: string }) => obj.id,
+                // TODO: This `resolve` function and manual usage of `batchDelegateToSchema`
+                //       is a necessary hack right now to allow type-merging to delegate
+                //       to root queries that return more than just a single list type.
+                //
+                //       There should be a cleaner way to support this pattern, and I've logged
+                //       a GH issue with graphql-tools looking for a better option
+                //       https://github.com/ardatan/graphql-tools/issues/2438
+                resolve(
+                    _originalResult: any,
+                    context: any,
+                    info: GraphQLResolveInfo,
+                    subschema: GraphQLSchema | SubschemaConfig,
+                    selectionSet: SelectionSetNode,
+                    key: string | number,
+                ) {
+                    return batchDelegateToSchema({
+                        schema: subschema,
+                        operation: 'query',
+                        fieldName: 'getProductsByIds',
+                        key,
+                        // Generate the arguments object for the `Query.products` operation
+                        // we will send to the monolith
+                        argsFromKeys: (ids: readonly string[]) => ({
+                            ids: ids,
+                        }),
+                        selectionSet,
+                        context,
+                        info,
+                        // We've landed here from a merged type resolver - must skip
+                        // here or we'll end up in an infinite loop
+                        skipTypeMerging: true,
+                        transforms: [
+                            // Search service returns the `Products` type from `Query.products`,
+                            // but graphql-tools type merging wants `Query.products` to return
+                            // just a [ProductInterface]. To work-around this for now, we use
+                            // a transform query, and hoist the results of the `Product.items`
+                            // field to be the only result from `Query.products`.
+                            new TransformQuery({
+                                // Look for `Query.products`
+                                path: ['getProductsByIds'],
+                                queryTransformer: subtree => ({
+                                    kind: Kind.SELECTION_SET,
+                                    selections: [
+                                        {
+                                            kind: Kind.FIELD,
+                                            name: {
+                                                kind: Kind.NAME,
+                                                value: 'items',
+                                            },
+                                            selectionSet: subtree,
+                                        },
+                                    ],
+                                }),
+                                resultTransformer(result) {
+                                    // Only return the items, not the wrapper
+                                    // with paging info
+                                    return result?.items || [];
+                                },
+                            }),
+                        ],
+                    });
+                },
+            },
+        },
     };
 }
 

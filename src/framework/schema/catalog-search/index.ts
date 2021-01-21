@@ -1,4 +1,4 @@
-import { delegateToSchema, SubschemaConfig } from 'graphql-tools';
+import { SubschemaConfig } from 'graphql-tools';
 import { FrameworkConfig } from '../../config';
 import { Logger } from '../../logger';
 import {
@@ -14,21 +14,27 @@ import {
     FilterRangeTypeInput,
     ProductAttributeFilterInput,
     ProductAttributeSortInput,
+    ProductInterface,
+    Products,
     SortEnum,
 } from '../../../../generated/graphql';
 import { credentials } from 'grpc';
 import { promisify } from 'util';
 import { SearchClient } from '../../../../generated/search_grpc_pb';
-import { GraphQLSchema } from 'graphql';
+import {
+    GraphQLSchema,
+    GraphQLResolveInfo,
+    SelectionSetNode,
+    Kind,
+} from 'graphql';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { typeDefs } from './type_defs';
+import { resolveType } from './product_type_resolver';
 
 // Incoming options which are needed to create Search GraphQl schema
 type Opts = {
     config: FrameworkConfig;
     logger: Logger;
-    //TODO: (SFAPP-274) find a way to just merge schemas, we don't need create new typeDefs here and provide old schema.
-    stitchedSchemas: GraphQLSchema | SubschemaConfig;
 };
 
 /**
@@ -36,9 +42,8 @@ type Opts = {
  *
  * @param config
  * @param logger
- * @param stitchedSchemas
  */
-export async function searchSchema({ config, logger, stitchedSchemas }: Opts) {
+export async function searchSchema({ config, logger }: Opts) {
     // Prepare credentials and URL for storefront search client
     const host = config.get('SEARCH_STOREFRONT_HOST').asString();
     const port = config.get('SEARCH_STOREFRONT_PORT').asNumber();
@@ -52,10 +57,19 @@ export async function searchSchema({ config, logger, stitchedSchemas }: Opts) {
     let searchSchema: GraphQLSchema | SubschemaConfig = makeExecutableSchema({
         typeDefs: typeDefs,
         resolvers: {
+            // Resolver for product types
+            ProductInterface: {
+                __resolveType() {
+                    // TODO: (SFAPP-278, SFAPP-185) change to: return resolveType(product.type_id);
+                    // TODO: temporary solution as type_id is absent in catalog storefront storage (SFAPP-185)
+                    // TODO: possibly we need to resolve product type during products search to make an ability for schemas merging
+                    return resolveType('simple');
+                },
+            },
             Query: {
                 // Create resolver for "products" fields which will delegate call to catalog "getProductsByIds" method and retrieve products data through that
                 products: async function(root, args, context, info) {
-                    // Prepare storefront search client request
+                    // Prepare storefront sel0arch client request
                     const msg = new ProductSearchRequest();
 
                     const {
@@ -87,7 +101,7 @@ export async function searchSchema({ config, logger, stitchedSchemas }: Opts) {
                     //TODO: (SFAPP-277) Add store code resolving logic to search resolver and pass it to other resolvers (e.g. Catalog)
                     msg.setStore('1');
 
-                    //Make request to catalog storefont service
+                    //Make request to storefront search service
                     logger.debug('Sending search request to Search gRPC API');
                     logger.trace(msg.toObject());
                     const res = await searchProducts(msg);
@@ -95,19 +109,24 @@ export async function searchSchema({ config, logger, stitchedSchemas }: Opts) {
                         res,
                         'Did not receive a response from Catalog gRPC API',
                     );
-                    // TODO: (SFAPP-276) Delegation to "getProductsByIds" and return only products IDs on current stage
-                    // return res.getItemsList();
+
                     const products = res.getItemsList();
-                    return delegateToSchema({
-                        schema: stitchedSchemas,
-                        operation: 'query',
-                        fieldName: 'getProductsByIds',
-                        args: {
-                            ids: products,
-                        },
-                        context,
-                        info,
-                    });
+                    const result = {} as Products;
+                    const items = [];
+
+                    //Request product ids data from storefront search result
+                    for (const product of products) {
+                        let productData = {} as ProductInterface;
+                        Object.assign(productData, {
+                            id: <number>(<unknown>product),
+                        });
+
+                        items.push(productData);
+                    }
+                    // prepare result with product ids
+                    result.items = items;
+
+                    return result;
                 },
             },
         },
@@ -115,28 +134,6 @@ export async function searchSchema({ config, logger, stitchedSchemas }: Opts) {
 
     return {
         schema: searchSchema,
-        // TODO: (SFAPP-276) Delegation to "getProductsByIds" and return only products IDs on current stage
-        // merge: {
-        //     ProductInterface: {
-        //         resolve(
-        //             _originalResult: any,
-        //             context: any,
-        //             info: GraphQLResolveInfo,
-        //             subschema: GraphQLSchema | SubschemaConfig,
-        //         ) {
-        //             delegateToSchema({
-        //                 schema: subschema,
-        //                 operation: 'query',
-        //                 fieldName: 'getProductsByIds',
-        //                 args: {
-        //                     ids: _originalResult,
-        //                 },
-        //                 context,
-        //                 info,
-        //             })
-        //         },
-        //     },
-        // },
     };
 }
 
