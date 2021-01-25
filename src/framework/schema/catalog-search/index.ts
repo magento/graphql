@@ -21,12 +21,7 @@ import {
 import { credentials } from 'grpc';
 import { promisify } from 'util';
 import { SearchClient } from '../../../../generated/search_grpc_pb';
-import {
-    GraphQLSchema,
-    GraphQLResolveInfo,
-    SelectionSetNode,
-    Kind,
-} from 'graphql';
+import { GraphQLSchema } from 'graphql';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { typeDefs } from './type_defs';
 import { resolveType } from './product_type_resolver';
@@ -68,7 +63,7 @@ export async function searchSchema({ config, logger }: Opts) {
             },
             Query: {
                 // Create resolver for "products" fields which will delegate call to catalog "getProductsByIds" method and retrieve products data through that
-                products: async function(root, args, context, info) {
+                productsSearch: async function(root, args, context, info) {
                     // Prepare storefront sel0arch client request
                     const msg = new ProductSearchRequest();
 

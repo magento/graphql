@@ -168,7 +168,7 @@ export const typeDefs = gql`
         The products query searches for products that match the criteria specified in the search and filter attributes.
         TODO: In our case "products" should retyrn only products ids, and then delegate call to catalog's "getProductsByIds" by merging or thomething like that
         """
-        products(
+        productsSearch(
             """
             Performs a full-text search using the specified key words.
             """
