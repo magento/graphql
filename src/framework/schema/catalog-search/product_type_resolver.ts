@@ -1,5 +1,5 @@
 /**
- * Resolve entity type by type_id value (obtained from storefront)
+ * Resolve product type by type_id value (retrieved from Storefront API)
  *
  * @param type
  */

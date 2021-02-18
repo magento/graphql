@@ -2,7 +2,8 @@ import { stitchSchemas, SubschemaConfig } from 'graphql-tools';
 import { GraphQLSchema, DocumentNode } from 'graphql';
 import { createPremiumSearchSchema } from './premium-search';
 import { createMonolithProxySchema } from './monolith-proxy';
-import { createCatalogSchema } from './catalog';
+import { catalogSchema } from './catalog';
+import { searchSchema } from './catalog-search';
 import { FrameworkConfig } from '../config';
 import { Resolvers } from '../../../generated/graphql';
 import { Logger } from '../logger';
@@ -23,14 +24,19 @@ export async function buildFrameworkSchema({ config, logger }: Opts) {
 
     if (config.get('ENABLE_CATALOG_STOREFRONT').asBoolean()) {
         logger.debug('Catalog schema enabled');
-        const catalog = await createCatalogSchema({ config, logger });
-        resolvers.push(catalog.resolvers);
-        typeDefs.push(catalog.typeDefs);
+        const readyCatalogSchema = await catalogSchema({ config, logger });
+        subschemas.push(readyCatalogSchema);
     }
 
     if (config.get('ENABLE_PREMIUM_SEARCH').asBoolean()) {
         logger.debug('Premium Search schema enabled');
         subschemas.push(await createPremiumSearchSchema({ config, logger }));
+    }
+
+    if (config.get('ENABLE_SEARCH_STOREFRONT').asBoolean()) {
+        logger.debug('Storefront Search enabled');
+        const search = await searchSchema({ config, logger });
+        subschemas.push(search);
     }
 
     return stitchSchemas({
