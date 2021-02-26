@@ -34,7 +34,7 @@
     "graphql-tag": "^2.11.0",
     "graphql-tools": "^7.0.2",
     "graphql-parse-resolve-info": "^4.10.0",
-    "grpc": "^1.24.2",
+    "grpc": "^1.24.5",
     "meow": "^7.1.1",
     "node-fetch": "^2.6.0",
     "pino": "^6.7.0"
